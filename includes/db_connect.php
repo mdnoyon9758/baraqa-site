@@ -1,35 +1,39 @@
 <?php
-/**
- * This file establishes the database connection using PDO.
- * It creates a single, reusable $pdo object for the entire application.
- */
+// includes/db_connect.php
 
-// 1. Database Configuration
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'bs_db');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_CHARSET', 'utf8mb4');
+// For Render deployment, fetch credentials from environment variables
+if (getenv('DB_HOST')) {
+    $db_host = getenv('DB_HOST');
+    $db_name = getenv('DB_NAME');
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASSWORD');
+    $db_port = getenv('DB_PORT') ?: 5432;
 
-// 2. PDO Connection Options
+    // DSN for PostgreSQL
+    $dsn = "pgsql:host={$db_host};port={$db_port};dbname={$db_name}";
+} else {
+    // Fallback for local XAMPP development (MySQL)
+    $db_host = 'localhost';
+    $db_name = 'bs'; // আপনার লোকাল ডাটাবেসের নাম
+    $db_user = 'root';
+    $db_pass = ''; // আপনার লোকাল ডাটাবেসের পাসওয়ার্ড
+    
+    // DSN for MySQL
+    $dsn = "mysql:host={$db_host};dbname={$db_name};charset=utf8mb4";
+}
+
 $options = [
     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     PDO::ATTR_EMULATE_PREPARES   => false,
 ];
 
-// 3. Data Source Name (DSN)
-$dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
-
-// 4. Create PDO Instance within a try-catch block
 try {
-    $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+    $pdo = new PDO($dsn, $db_user, $db_pass, $options);
 } catch (PDOException $e) {
-    // On connection failure, stop the script and display a clean error message.
-    // This prevents leaking sensitive information in a production environment.
-    header('Content-Type: text/plain; charset=utf-8');
-    http_response_code(503); // Service Unavailable
+    // Don't show detailed errors on a live site for security reasons
+    error_log("Database Connection Error: " . $e->getMessage());
+    // Display a generic, user-friendly error message
     die("Database Connection Failed: Unable to connect to the database. Please try again later.");
-    // For debugging, you can use: die("Database Connection Failed: " . $e->getMessage());
 }
 ?>
