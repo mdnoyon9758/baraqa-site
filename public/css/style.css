@@ -1,0 +1,431 @@
+/* File: /bs/public/css/style.css */
+/* Version 2.0 (Final - For Bootstrap 5 Homepage) */
+
+/* --- General Body & Link Styles --- */
+body {
+    background-color: #f8f9fa;
+}
+
+a {
+    transition: color .2s ease-in-out;
+}
+
+/* --- Hero Section Styles --- */
+.hero-section {
+    background: linear-gradient(rgba(23, 31, 42, 0.8), rgba(23, 31, 42, 0.8)), url('https://images.pexels.com/photos/326518/pexels-photo-326518.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1') no-repeat center center;
+    background-size: cover;
+    padding: 6rem 1rem;
+}
+
+.hero-section .display-4 {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* --- Section Title Styles --- */
+.section-title {
+    position: relative;
+    padding-bottom: 15px;
+    margin-bottom: 40px;
+}
+.section-title::after {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 4px;
+    background-color: #0d6efd; /* Bootstrap Primary Blue */
+    margin: 15px auto 0;
+    border-radius: 2px;
+}
+
+/* --- Product Card Styles --- */
+.product-card {
+    border: none;
+    transition: transform .2s ease-in-out, box-shadow .2s ease-in-out;
+}
+
+.product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, .15) !important;
+}
+
+.product-card .card-img-top {
+    height: 220px;
+    object-fit: contain; /* Use 'contain' to show the whole product */
+    padding: 1rem;
+    background-color: #fff;
+}
+
+.product-card .card-title {
+    min-height: 3rem; /* Allows for 2 lines of text */
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.product-card .card-title a:hover {
+    color: #0d6efd;
+}
+
+/* --- Deal of the Day Section --- */
+#deal-of-the-day .card-title {
+    min-height: auto; /* Override standard card title height */
+}
+
+#deal-of-the-day .img-fluid {
+    max-height: 400px;
+    object-fit: contain;
+}
+
+/* --- Brand Section Styles --- */
+.brand-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100px;
+    transition: box-shadow .2s ease-in-out, border-color .2s ease-in-out;
+}
+
+.brand-card:hover {
+    border-color: #dee2e6;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+}
+
+.brand-card img {
+    max-height: 50px;
+    max-width: 100%;
+    filter: grayscale(100%);
+    opacity: 0.7;
+    transition: filter 0.3s, opacity 0.3s;
+}
+
+.brand-card:hover img {
+    filter: grayscale(0%);
+    opacity: 1;
+}
+/* Add this to your public/css/style.css file */
+
+:root {
+    --primary-color: #0d6efd;
+    --dark-bg: #121212;
+    --light-bg: #f8f9fa;
+    --text-light: #f8f9fa;
+    --text-dark: #212529;
+    --text-muted-light: rgba(255, 255, 255, 0.7);
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+}
+
+/* --- Hero Section --- */
+.hero-section {
+    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg') no-repeat center center;
+    background-size: cover;
+    padding: 8rem 0;
+    color: var(--text-light);
+}
+.hero-section .display-4 {
+    font-weight: 700;
+}
+.hero-section .lead {
+    font-weight: 400;
+    max-width: 600px;
+    margin: 1.5rem auto;
+}
+.hero-section .btn-primary {
+    transition: all 0.3s ease;
+}
+
+/* --- Section Title --- */
+.section-title {
+    font-weight: 700;
+    margin-bottom: 3rem;
+}
+.section-title span {
+    border-bottom: 3px solid var(--primary-color);
+    padding-bottom: 0.5rem;
+}
+
+/* --- Features Section --- */
+.feature-icon {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+}
+
+/* --- Product Card Enhancements --- */
+.product-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.product-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 1rem 3rem rgba(0,0,0,.175)!important;
+}
+
+/* --- Brand Section --- */
+.brand-card {
+    transition: transform 0.3s ease;
+    filter: grayscale(100%);
+}
+.brand-card:hover {
+    transform: scale(1.1);
+    filter: grayscale(0%);
+}
+
+/* --- CTA Section --- */
+.cta-section {
+    background-color: var(--primary-color);
+    color: var(--text-light);
+    border-radius: 1rem;
+}
+/* Add these new styles to your public/css/style.css file */
+
+/* --- Vertical Scroll Product List --- */
+.vertical-scroll-container {
+    height: 450px; /* Adjust height as needed */
+    overflow-y: auto;
+    padding-right: 15px; /* For scrollbar */
+}
+/* Custom scrollbar for better look */
+.vertical-scroll-container::-webkit-scrollbar {
+    width: 8px;
+}
+.vertical-scroll-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+.vertical-scroll-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+.vertical-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.product-list-item-v {
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    transition: box-shadow 0.3s ease;
+}
+.product-list-item-v:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15)!important;
+}
+.product-list-item-v img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 0.25rem;
+    margin-right: 1rem;
+}
+.product-list-item-v .product-info {
+    flex-grow: 1;
+}
+.product-list-item-v .product-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+.product-list-item-v .product-price {
+    font-size: 1rem;
+    font-weight: 700;
+}
+/* --- Category Tabs Section --- */
+.category-tabs .nav-link {
+    color: var(--text-dark);
+    font-weight: 500;
+    border: none;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+.category-tabs .nav-link.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    background-color: transparent;
+}
+.category-tabs .nav-link:hover {
+    color: var(--primary-color);
+}
+.tab-content {
+    padding-top: 2rem;
+}
+/* --- Multi-Column Vertical Scroll Product List --- */
+.category-product-grid-container {
+    height: 600px; /* Adjust height for approx 3 rows of cards */
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    background-color: #ffffff;
+}
+
+/* Custom scrollbar for better look */
+.category-product-grid-container::-webkit-scrollbar {
+    width: 8px;
+}
+.category-product-grid-container::-webkit-scrollbar-track {
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+.category-product-grid-container::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+.category-product-grid-container::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+}
+
+/* Ensure cards inside have consistent height */
+.category-product-grid-container .product-card {
+    height: 100%;
+}
+/* --- Horizontal Scroll Product Section --- */
+.horizontal-scroll-wrapper {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* for smooth scrolling on iOS */
+    -ms-overflow-style: -ms-autohiding-scrollbar; /* For IE/Edge */
+    scrollbar-width: none; /* For Firefox */
+    padding-bottom: 1.5rem;
+    gap: 1.5rem; /* Space between cards */
+}
+
+/* Hide scrollbar for Webkit browsers (Chrome, Safari) */
+.horizontal-scroll-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+.horizontal-scroll-wrapper .product-card-wrapper {
+    flex: 0 0 auto;
+    width: 280px; /* Adjust width of each card */
+}
+
+@media (max-width: 767px) {
+    .horizontal-scroll-wrapper .product-card-wrapper {
+        width: 240px; /* Smaller cards on mobile */
+    }
+}
+
+/* --- Modern Header & Navigation Bar --- */
+.site-header .navbar {
+    background-color: rgba(33, 37, 41, 0.9) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 0.75rem 0;
+}
+.site-header .navbar-brand {
+    font-weight: 700;
+}
+.site-header .nav-link {
+    color: rgba(255, 255, 255, 0.75);
+    transition: color 0.3s ease;
+    padding: 0.8rem 1rem;
+}
+.site-header .nav-link:hover,
+.site-header .nav-link.active {
+    color: #fff;
+}
+.site-header .dropdown-menu {
+    border-radius: 0.5rem;
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    margin-top: 0.5rem;
+}
+.site-header .cta-button {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+.site-header .cta-button:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        position: fixed;
+        top: 0;
+        right: -280px; /* Initially hidden */
+        width: 280px;
+        height: 100vh;
+        background-color: #212529;
+        padding: 2rem;
+        transition: right 0.4s cubic-bezier(0.77, 0, 0.175, 1);
+        z-index: 1040;
+    }
+    .navbar-collapse.show {
+        right: 0;
+    }
+    .navbar-toggler {
+        z-index: 1041;
+        border: none;
+    }
+    .navbar-toggler:focus {
+        box-shadow: none;
+    }
+    /* Overlay for when mobile menu is open */
+    .menu-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 1039;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.4s ease;
+    }
+    .menu-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+}
+/* --- Modern Footer --- */
+.site-footer {
+    background-color: #1c1c1c;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+.site-footer h6 {
+    color: #fff;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.site-footer .footer-hr {
+    background-color: var(--primary-color);
+    height: 2px;
+    width: 60px;
+    opacity: 1;
+}
+.site-footer a {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+.site-footer a:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+.site-footer .social-icons a {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    color: #fff;
+    margin-right: 10px;
+    transition: background-color 0.3s ease;
+}
+.site-footer .social-icons a:hover {
+    background-color: var(--primary-color);
+}
+.footer-bottom {
+    background-color: rgba(0, 0, 0, 0.2);
+}
