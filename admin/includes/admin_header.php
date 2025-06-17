@@ -3,22 +3,24 @@
 // We assume that a session is active, the user is authenticated,
 // and all necessary functions from functions.php are already loaded by auth.php.
 
-// --- Dynamic Sidebar Menu ---
+// --- Dynamic Sidebar Menu with absolute paths ---
+$admin_base_url = '/admin/';
 $menu_items = [
-    ['name' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'speedometer2'],
-    ['name' => 'Products', 'url' => 'products.php', 'icon' => 'grid'],
-    ['name' => 'Categories', 'url' => 'categories.php', 'icon' => 'tags'],
-    ['name' => 'Brands', 'url' => 'manage_brands.php', 'icon' => 'bookmark-star'],
-    ['name' => 'Pages', 'url' => 'manage_pages.php', 'icon' => 'file-earmark-text'],
-    ['name' => 'API Config', 'url' => 'manage_api.php', 'icon' => 'cpu'],
-    ['name' => 'Task Scheduler', 'url' => 'scheduler.php', 'icon' => 'clock-history'],
-    ['name' => 'Site Settings', 'url' => 'settings.php', 'icon' => 'gear'],
-    ['name' => 'Clicked Leads', 'url' => 'clicked_leads.php', 'icon' => 'graph-up-arrow'],
-    ['name' => 'Notifications', 'url' => 'notifications.php', 'icon' => 'bell'],
-    ['name' => 'System Logs', 'url' => 'logs.php', 'icon' => 'journal-text'],
+    ['name' => 'Dashboard', 'url' => $admin_base_url . 'dashboard.php', 'icon' => 'speedometer2'],
+    ['name' => 'Products', 'url' => $admin_base_url . 'products.php', 'icon' => 'grid'],
+    ['name' => 'Categories', 'url' => $admin_base_url . 'categories.php', 'icon' => 'tags'],
+    ['name' => 'Brands', 'url' => $admin_base_url . 'manage_brands.php', 'icon' => 'bookmark-star'],
+    ['name' => 'Pages', 'url' => $admin_base_url . 'manage_pages.php', 'icon' => 'file-earmark-text'],
+    ['name' => 'API Config', 'url' => $admin_base_url . 'manage_api.php', 'icon' => 'cpu'],
+    ['name' => 'Task Scheduler', 'url' => $admin_base_url . 'scheduler.php', 'icon' => 'clock-history'],
+    ['name' => 'Site Settings', 'url' => $admin_base_url . 'settings.php', 'icon' => 'gear'],
+    ['name' => 'Clicked Leads', 'url' => $admin_base_url . 'clicked_leads.php', 'icon' => 'graph-up-arrow'],
+    ['name' => 'Notifications', 'url' => $admin_base_url . 'notifications.php', 'icon' => 'bell'],
+    ['name' => 'System Logs', 'url' => $admin_base_url . 'logs.php', 'icon' => 'journal-text'],
 ];
 
-$current_page = basename($_SERVER['PHP_SELF']);
+// Match the current page against the absolute URL
+$current_page_uri = $_SERVER['REQUEST_URI'];
 $site_title = get_setting('site_name') ?? 'BARAQA Admin';
 // The $page_title variable should be set on each page before including this header.
 $full_title = isset($page_title) ? e($page_title) . ' - ' . e($site_title) : e($site_title);
@@ -29,13 +31,17 @@ $full_title = isset($page_title) ? e($page_title) . ' - ' . e($site_title) : e($
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $full_title; ?></title>
+    <!-- SEO meta tags are not needed for admin area -->
+    <meta name="robots" content="noindex, nofollow">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="../public/css/admin.css">
+    <!-- Corrected path for admin.css -->
+    <link rel="stylesheet" href="/public/css/admin.css">
 </head>
 <body>
     <!-- SVG Icon Sprite for performance -->
     <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <!-- All SVG symbols remain the same... -->
         <symbol id="speedometer2" viewBox="0 0 16 16"><path d="M8 4a.5.5 0 0 1 .5.5V6a.5.5 0 0 1-1 0V4.5A.5.5 0 0 1 8 4zM3.732 5.732a.5.5 0 0 1 .707 0l.915.914a.5.5 0 1 1-.708.708l-.914-.915a.5.5 0 0 1 0-.707zM2 10a.5.5 0 0 1 .5-.5h1.586a.5.5 0 0 1 0 1H2.5A.5.5 0 0 1 2 10zm9.5 0a.5.5 0 0 1 .5-.5h1.5a.5.5 0 0 1 0 1H12a.5.5 0 0 1-.5-.5zm.754-4.246a.5.5 0 0 1 0 .708l-.914.915a.5.5 0 1 1-.707-.708l.914-.914a.5.5 0 0 1 .707 0zM8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zM6.5 4.5v-1a1.5 1.5 0 1 1 3 0v1h-3zM8 16a6 6 0 1 1 0-12 6 6 0 0 1 0 12zM10 10.5a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0z"/></symbol>
         <symbol id="grid" viewBox="0 0 16 16"><path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zM2.5 2a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zM9 2.5A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zM10.5 2a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zM1 10.5A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zM2.5 10a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zM9 10.5A1.5 1.5 0 0 1 10.5 9h3A1.5 1.5 0 0 1 15 10.5v3A1.5 1.5 0 0 1 13.5 15h-3A1.5 1.5 0 0 1 9 13.5v-3zM10.5 10a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3z"/></symbol>
         <symbol id="tags" viewBox="0 0 16 16"><path d="M3 2v4.586l7 7L14.586 9l-7-7H3zM2 2a1 1 0 0 1 1-1h4.586a1 1 0 0 1 .707.293l7 7a1 1 0 0 1 0 1.414l-4.586 4.586a1 1 0 0 1-1.414 0l-7-7A1 1 0 0 1 2 6.586V2z"/><path d="M5.5 5a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm0 1a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM1 7.086a1 1 0 0 0 .293.707l7 7a1 1 0 0 0 1.414 0l.043-.043-7.457-7.457A1 1 0 0 0 1 7.086V7z"/></symbol>
@@ -54,11 +60,15 @@ $full_title = isset($page_title) ? e($page_title) . ' - ' . e($site_title) : e($
         <!-- Sidebar -->
         <div class="bg-dark border-end" id="sidebar-wrapper">
             <div class="sidebar-heading bg-dark text-white">
-                <a href="dashboard.php" class="text-white text-decoration-none h5"><?php echo e($site_title); ?></a>
+                <!-- Corrected path for dashboard link -->
+                <a href="<?php echo $admin_base_url; ?>dashboard.php" class="text-white text-decoration-none h5"><?php echo e($site_title); ?></a>
             </div>
             <div class="list-group list-group-flush">
                 <?php foreach ($menu_items as $item): ?>
-                    <?php $is_active = ($current_page == $item['url']) ? 'active' : ''; ?>
+                    <?php 
+                    // Check if the current page URI ends with the menu item's URL
+                    $is_active = (str_ends_with($current_page_uri, $item['url'])) ? 'active' : ''; 
+                    ?>
                     <a href="<?php echo e($item['url']); ?>" class="list-group-item list-group-item-action bg-dark text-white <?php echo $is_active; ?>">
                         <svg class="bi me-2" width="16" height="16"><use xlink:href="#<?php echo e($item['icon']); ?>"/></svg> 
                         <?php echo e($item['name']); ?>
@@ -81,9 +91,10 @@ $full_title = isset($page_title) ? e($page_title) . ' - ' . e($site_title) : e($
                                 <?php echo e($_SESSION['admin_name'] ?? 'Admin'); ?>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                <li><a class="dropdown-item" href="profile.php">Profile</a></li>
+                                <!-- Corrected paths for profile and logout -->
+                                <li><a class="dropdown-item" href="<?php echo $admin_base_url; ?>profile.php">Profile</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="logout.php">Logout</a></li>
+                                <li><a class="dropdown-item" href="<?php echo $admin_base_url; ?>logout.php">Logout</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -91,4 +102,4 @@ $full_title = isset($page_title) ? e($page_title) . ' - ' . e($site_title) : e($
             </nav>
             <div class="container-fluid p-4">
                 <?php display_flash_messages(); ?>
-                <!-- Main Content of each page will start here --> 
+                <!-- Main Content of each page will start here -->

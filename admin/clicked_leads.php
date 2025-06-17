@@ -66,7 +66,8 @@ try {
                                 <td><?php echo e($lead['id']); ?></td>
                                 <td>
                                     <?php if ($lead['product_title']): ?>
-                                        <a href="../product.php?slug=<?php echo e($lead['product_slug']); ?>" target="_blank">
+                                        <!-- Corrected Path: Changed from ../product.php to /product.php -->
+                                        <a href="/product.php?slug=<?php echo e($lead['product_slug']); ?>" target="_blank">
                                             <?php echo e($lead['product_title']); ?>
                                         </a>
                                     <?php else: ?>

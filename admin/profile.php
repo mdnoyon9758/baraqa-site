@@ -1,110 +1,119 @@
 <?php
 $page_title = "My Profile";
-require_once 'includes/auth.php'; // 身份验证、CSRF 令牌等
-require_once 'includes/admin_header.php';
+require_once 'includes/auth.php'; // Handles authentication, CSRF token etc.
+
+// Define the absolute URL for this page for consistent redirects and form actions
+$profile_page_url = '/admin/profile.php';
+$login_page_url = '/admin/login.php';
 
 $admin_id = $_SESSION['admin_id'];
-$errors = [];
-$success = '';
+$profile_errors = [];
+$password_errors = [];
 
-// 获取当前管理员信息
+// --- Fetch current admin information ---
 try {
     $stmt = $pdo->prepare("SELECT name, email FROM admins WHERE id = :id");
     $stmt->execute(['id' => $admin_id]);
     $admin = $stmt->fetch();
 
     if (!$admin) {
-        // 如果找不到管理员，这通常是一个严重错误，可能是会话被篡改
+        // If admin is not found, this is a serious error, possibly a tampered session
         session_destroy();
-        header('Location: login.php');
+        header('Location: ' . $login_page_url);
         exit;
     }
 } catch (PDOException $e) {
-    // 数据库错误，显示错误信息
-    $_SESSION['error_message'] = "无法加载您的个人资料，请稍后重试。";
-    $admin = ['name' => 'Error', 'email' => 'Error'];
+    // Database error, show a message via session
+    $_SESSION['error_message'] = "Could not load your profile. Please try again later.";
+    error_log("Profile load error: " . $e->getMessage());
+    $admin = ['name' => 'Error Loading', 'email' => 'Error Loading'];
 }
 
-
-// 处理表单提交
+// --- Process form submissions ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // 验证 CSRF 令牌
+    // Verify CSRF token
     if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
-        $_SESSION['error_message'] = 'CSRF 令牌不匹配，操作已中止。';
-        header('Location: profile.php');
+        $_SESSION['error_message'] = 'CSRF token mismatch. Action aborted.';
+        header('Location: ' . $profile_page_url);
         exit;
     }
 
-    // --- 更新个人信息 ---
+    // --- Handle Profile Information Update ---
     if (isset($_POST['update_profile'])) {
         $name = trim($_POST['name']);
         $email = trim($_POST['email']);
 
         if (empty($name) || empty($email)) {
-            $errors[] = "姓名和邮箱不能为空。";
+            $profile_errors[] = "Name and Email cannot be empty.";
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors[] = "邮箱格式无效。";
+            $profile_errors[] = "Invalid email format.";
         } else {
-            // 检查邮箱是否已被其他管理员使用
-            $stmt = $pdo->prepare("SELECT id FROM admins WHERE email = :email AND id != :id");
-            $stmt->execute(['email' => $email, 'id' => $admin_id]);
-            if ($stmt->fetch()) {
-                $errors[] = "此邮箱已被其他账户注册。";
+            // Check if the email is already used by another admin
+            $stmt_check_email = $pdo->prepare("SELECT id FROM admins WHERE email = :email AND id != :id");
+            $stmt_check_email->execute(['email' => $email, 'id' => $admin_id]);
+            if ($stmt_check_email->fetch()) {
+                $profile_errors[] = "This email is already registered to another account.";
             }
         }
 
-        if (empty($errors)) {
+        if (empty($profile_errors)) {
             try {
-                $stmt = $pdo->prepare("UPDATE admins SET name = :name, email = :email WHERE id = :id");
-                $stmt->execute(['name' => $name, 'email' => $email, 'id' => $admin_id]);
-                $_SESSION['admin_name'] = $name; // 更新会话中的姓名
-                $_SESSION['success_message'] = "个人资料更新成功！";
-                header('Location: profile.php');
+                $stmt_update = $pdo->prepare("UPDATE admins SET name = :name, email = :email WHERE id = :id");
+                $stmt_update->execute(['name' => $name, 'email' => $email, 'id' => $admin_id]);
+                
+                $_SESSION['admin_name'] = $name; // Update the name in the session
+                $_SESSION['success_message'] = "Profile updated successfully!";
+                log_admin_activity("Updated own profile information.");
+                header('Location: ' . $profile_page_url);
                 exit;
             } catch (PDOException $e) {
-                $errors[] = "数据库错误，无法更新个人资料。";
+                $profile_errors[] = "Database error: Could not update profile.";
+                error_log("Profile update error: " . $e->getMessage());
             }
         }
     }
 
-    // --- 更改密码 ---
+    // --- Handle Password Change ---
     if (isset($_POST['change_password'])) {
         $current_password = $_POST['current_password'];
         $new_password = $_POST['new_password'];
         $confirm_password = $_POST['confirm_password'];
 
         if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
-            $errors[] = "所有密码字段均为必填项。";
+            $password_errors[] = "All password fields are required.";
         } elseif (strlen($new_password) < 8) {
-            $errors[] = "新密码必须至少为8个字符。";
+            $password_errors[] = "New password must be at least 8 characters long.";
         } elseif ($new_password !== $confirm_password) {
-            $errors[] = "新密码与确认密码不匹配。";
+            $password_errors[] = "The new password and confirmation do not match.";
         } else {
-            // 验证当前密码
-            $stmt = $pdo->prepare("SELECT password FROM admins WHERE id = :id");
-            $stmt->execute(['id' => $admin_id]);
-            $admin_password_hash = $stmt->fetchColumn();
+            // Verify the current password
+            $stmt_pass = $pdo->prepare("SELECT password FROM admins WHERE id = :id");
+            $stmt_pass->execute(['id' => $admin_id]);
+            $admin_password_hash = $stmt_pass->fetchColumn();
 
             if (password_verify($current_password, $admin_password_hash)) {
-                // 当前密码正确，更新为新密码
+                // Current password is correct, update to the new one
                 $new_password_hash = password_hash($new_password, PASSWORD_DEFAULT);
-                $stmt_update = $pdo->prepare("UPDATE admins SET password = :password WHERE id = :id");
-                $stmt_update->execute(['password' => $new_password_hash, 'id' => $admin_id]);
-                $_SESSION['success_message'] = "密码已成功更改！";
-                header('Location: profile.php');
+                $stmt_update_pass = $pdo->prepare("UPDATE admins SET password = :password WHERE id = :id");
+                $stmt_update_pass->execute(['password' => $new_password_hash, 'id' => $admin_id]);
+                
+                $_SESSION['success_message'] = "Password changed successfully!";
+                log_admin_activity("Changed own password.");
+                header('Location: ' . $profile_page_url);
                 exit;
             } else {
-                $errors[] = "当前密码不正确。";
+                $password_errors[] = "Incorrect current password.";
             }
         }
     }
-    // 如果有错误，将它们存入会话中以便刷新后显示
-    if (!empty($errors)) {
-        $_SESSION['error_message'] = implode('<br>', $errors);
-        header('Location: profile.php');
-        exit;
-    }
 }
+
+// Generate Gravatar URL for the profile picture
+$gravatar_email = md5(strtolower(trim($admin['email'])));
+$gravatar_url = "https://www.gravatar.com/avatar/{$gravatar_email}?s=120&d=mp&r=g";
+
+// We can now include the header as all logic/redirects are done
+require_once 'includes/admin_header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -112,59 +121,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <div class="row">
-
-    <!-- 更新个人信息卡片 -->
+    <!-- Edit Profile Card -->
     <div class="col-lg-6">
         <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">编辑个人信息</h6>
-            </div>
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Edit Profile Information</h6></div>
             <div class="card-body">
-                <form action="profile.php" method="POST">
+                <div class="text-center mb-4">
+                    <img src="<?php echo $gravatar_url; ?>" alt="Profile Picture" class="rounded-circle img-thumbnail">
+                </div>
+
+                <?php if (!empty($profile_errors)): ?>
+                    <div class="alert alert-danger">
+                        <?php foreach ($profile_errors as $error): echo e($error) . '<br>'; endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <form action="<?php echo $profile_page_url; ?>" method="POST">
                     <input type="hidden" name="csrf_token" value="<?php echo e($csrf_token); ?>">
-                    
                     <div class="mb-3">
-                        <label for="name" class="form-label">姓名</label>
+                        <label for="name" class="form-label">Full Name</label>
                         <input type="text" class="form-control" id="name" name="name" value="<?php echo e($admin['name']); ?>" required>
                     </div>
-
                     <div class="mb-3">
-                        <label for="email" class="form-label">邮箱地址</label>
+                        <label for="email" class="form-label">Email Address</label>
                         <input type="email" class="form-control" id="email" name="email" value="<?php echo e($admin['email']); ?>" required>
                     </div>
-
-                    <button type="submit" name="update_profile" class="btn btn-primary">保存更改</button>
+                    <button type="submit" name="update_profile" class="btn btn-primary">Save Changes</button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- 更改密码卡片 -->
+    <!-- Change Password Card -->
     <div class="col-lg-6">
         <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">更改密码</h6>
-            </div>
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Change Password</h6></div>
             <div class="card-body">
-                <form action="profile.php" method="POST">
+                <?php if (!empty($password_errors)): ?>
+                    <div class="alert alert-danger">
+                        <?php foreach ($password_errors as $error): echo e($error) . '<br>'; endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <form action="<?php echo $profile_page_url; ?>" method="POST">
                     <input type="hidden" name="csrf_token" value="<?php echo e($csrf_token); ?>">
-                    
                     <div class="mb-3">
-                        <label for="current_password" class="form-label">当前密码</label>
+                        <label for="current_password" class="form-label">Current Password</label>
                         <input type="password" class="form-control" id="current_password" name="current_password" required>
                     </div>
-
                     <div class="mb-3">
-                        <label for="new_password" class="form-label">新密码 (至少8个字符)</label>
+                        <label for="new_password" class="form-label">New Password (min. 8 characters)</label>
                         <input type="password" class="form-control" id="new_password" name="new_password" required>
                     </div>
-
                     <div class="mb-3">
-                        <label for="confirm_password" class="form-label">确认新密码</label>
+                        <label for="confirm_password" class="form-label">Confirm New Password</label>
                         <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
                     </div>
-
-                    <button type="submit" name="change_password" class="btn btn-warning">更新密码</button>
+                    <button type="submit" name="change_password" class="btn btn-warning">Update Password</button>
                 </form>
             </div>
         </div>

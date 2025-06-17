@@ -31,6 +31,8 @@ session_destroy();
 // We need to start a new, clean session to store the flash message.
 session_start();
 $_SESSION['success_message'] = "You have been logged out successfully.";
-header("Location: login.php");
+
+// CHANGED: Using absolute path for redirect
+header("Location: /admin/login.php");
 exit;
 ?>

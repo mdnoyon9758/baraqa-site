@@ -6,8 +6,7 @@ require_once 'includes/admin_header.php';
 $notification_text = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
-        // CSRF error, but for this non-critical feature, we can just ignore and regenerate a token.
-        // Or show an error. For simplicity, we'll proceed.
+        // CSRF error, but for this non-critical feature, we can just ignore.
     }
 
     $limit = isset($_POST['deal_limit']) ? (int)$_POST['deal_limit'] : 5;
@@ -31,12 +30,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $deal_lines[] = "🔥🔥 **TOP DEALS OF THE DAY!** 🔥🔥\nDon't miss out on these amazing discounts!\n";
             $counter = 1;
             
-            // Get base URL from site settings or define it
             $site_url = rtrim(get_setting('site_url', $_SERVER['HTTP_HOST']), '/');
             
             foreach ($deals as $deal) {
                 $original_price = round($deal['price'] / (1 - ($deal['discount_percentage'] / 100)), 2);
-                $product_url = $site_url . '/bs/product.php?slug=' . $deal['slug'];
+                
+                // CHANGED: Removed the hardcoded '/bs/' from the URL path
+                $product_url = $site_url . '/product.php?slug=' . $deal['slug'];
                 
                 $deal_lines[] = sprintf(
                     "%d. **%s**\n" .
@@ -119,21 +119,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const textarea = document.getElementById('notification-textarea');
             const originalText = this.innerHTML;
 
-            // Use the modern Clipboard API
             navigator.clipboard.writeText(textarea.value).then(() => {
-                // Success feedback
                 this.innerHTML = '<i class="fas fa-check me-2"></i>Copied!';
                 this.classList.remove('btn-secondary');
                 this.classList.add('btn-success');
                 
-                // Revert back after 2 seconds
                 setTimeout(() => {
                     this.innerHTML = originalText;
                     this.classList.remove('btn-success');
                     this.classList.add('btn-secondary');
                 }, 2000);
             }).catch(err => {
-                // Error feedback
                 console.error('Failed to copy text: ', err);
                 this.innerHTML = 'Copy Failed';
                 this.classList.add('btn-danger');

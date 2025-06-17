@@ -1,19 +1,20 @@
 <?php
 // We only need functions.php which also includes db_connect.php
 // functions.php will also start the session.
-// The path is correct as login.php is in /admin/ and functions.php is in /includes/
 require_once __DIR__ . '/../includes/functions.php';
+
+// Define admin base URL for consistent redirects and links
+$admin_base_url = '/admin/';
 
 // If user is already logged in, redirect them to the dashboard
 if (is_logged_in()) {
-    // FIX 1: The correct admin landing page is dashboard.php, not index.php
-    header('Location: dashboard.php');
+    // CHANGED: Using absolute path for redirect
+    header('Location: ' . $admin_base_url . 'dashboard.php');
     exit;
 }
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // 1. Verify CSRF token
     if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
         $error = 'Invalid security token. Please try again.';
     } else {
@@ -24,29 +25,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Email and password are required.';
         } else {
             try {
-                // 2. Find the admin by email
                 $stmt = $pdo->prepare("SELECT * FROM admins WHERE email = :email");
                 $stmt->execute(['email' => $email]);
                 $admin = $stmt->fetch();
 
-                // 3. Verify password
                 if ($admin && password_verify($password, $admin['password'])) {
-                    // Password is correct, regenerate session ID for security
                     session_regenerate_id(true);
 
-                    // 4. Set session variables
                     $_SESSION['admin_id'] = $admin['id'];
                     $_SESSION['admin_name'] = $admin['name'];
                     
-                    // 5. Log successful login
                     log_admin_activity('Admin logged in successfully.');
                     
-                    // 6. Redirect to the dashboard
-                    // FIX 2: The correct admin landing page is dashboard.php
-                    header('Location: dashboard.php');
+                    // CHANGED: Using absolute path for redirect
+                    header('Location: ' . $admin_base_url . 'dashboard.php');
                     exit();
                 } else {
-                    // Log failed login attempt
                     log_admin_activity("Failed login attempt for email: {$email}");
                     $error = 'Invalid email or password.';
                 }
@@ -58,7 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Generate a new CSRF token for the form
 $csrf_token = generate_csrf_token();
 $site_title = get_setting('site_name') ?? 'BARAQA Admin';
 $allow_registration = get_setting('allow_admin_registration');
@@ -96,9 +89,9 @@ $allow_registration = get_setting('allow_admin_registration');
                 <div class="alert alert-danger text-center"><?php echo e($error); ?></div>
             <?php endif; ?>
             
-            <?php display_flash_messages(); // For messages from other pages like logout or register ?>
+            <?php display_flash_messages(); ?>
 
-            <form action="login.php" method="POST" novalidate>
+            <form action="<?php echo $admin_base_url; ?>login.php" method="POST" novalidate>
                 <input type="hidden" name="csrf_token" value="<?php echo e($csrf_token); ?>">
 
                 <div class="form-floating mb-3">
@@ -118,7 +111,8 @@ $allow_registration = get_setting('allow_admin_registration');
             <hr>
             <div class="text-center">
                 <?php if ($allow_registration === '1'): ?>
-                    <a class="small" href="register.php">Create an Account!</a>
+                    <!-- CHANGED: Using absolute path for link -->
+                    <a class="small" href="<?php echo $admin_base_url; ?>register.php">Create an Account!</a>
                 <?php endif; ?>
             </div>
         </div>

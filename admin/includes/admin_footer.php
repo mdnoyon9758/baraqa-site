@@ -22,8 +22,8 @@ $current_year = date('Y');
     <!-- Font Awesome for Icons -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
 
-    <!-- Custom Admin JS -->
-    <script src="../public/js/admin.js"></script>
+    <!-- Custom Admin JS (Path Corrected) -->
+    <script src="/public/js/admin.js"></script>
 
     <!-- START: Generic JavaScript Handler for All Delete Modals -->
     <script>

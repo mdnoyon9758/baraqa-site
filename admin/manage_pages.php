@@ -112,9 +112,13 @@ require_once 'includes/admin_header.php';
         <?php else: foreach ($pages as $page): ?>
             <tr>
             <td><?php echo e($page['title']); ?></td>
-            <td><a href="../page/<?php echo e($page['slug']); ?>" target="_blank">/page/<?php echo e($page['slug']); ?></a></td>
+            <!-- CHANGED: Path from ../page/ to /page/ for robustness -->
+            <td><a href="/page/<?php echo e($page['slug']); ?>" target="_blank">/page/<?php echo e($page['slug']); ?></a></td>
             <td class="text-center"><?php echo $page['is_published'] ? '<span class="badge bg-success">Published</span>' : '<span class="badge bg-warning text-dark">Draft</span>'; ?></td>
-            <td><a href="manage_pages.php?action=edit&id=<?php echo e($page['id']); ?>" class="btn btn-sm btn-info" title="Edit"><i class="fas fa-edit"></i></a><button class="btn btn-sm btn-danger delete-btn" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal" data-id="<?php echo e($page['id']); ?>"><i class="fas fa-trash"></i></button></td>
+            <td class="text-center">
+                <a href="manage_pages.php?action=edit&id=<?php echo e($page['id']); ?>" class="btn btn-sm btn-info" title="Edit"><i class="fas fa-edit"></i></a>
+                <button class="btn btn-sm btn-danger delete-btn" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal" data-id="<?php echo e($page['id']); ?>"><i class="fas fa-trash"></i></button>
+            </td>
             </tr>
         <?php endforeach; endif; ?>
     </tbody></table></div></div></div>
