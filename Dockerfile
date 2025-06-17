@@ -1,8 +1,13 @@
 # Use the official, public Docker image for PHP with Apache
 FROM php:8.2-apache
 
-# Install necessary PHP extensions for PostgreSQL and other functions
-RUN docker-php-ext-install pdo pdo_pgsql
+# Install system dependencies needed for PostgreSQL PHP extension
+# We first run 'apt-get update' and then install 'libpq-dev' and 'python3'
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    python3 \
+    && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
+    && docker-php-ext-install pdo pdo_pgsql
 
 # The default document root for this image is /var/www/html
 # We will copy our code there
