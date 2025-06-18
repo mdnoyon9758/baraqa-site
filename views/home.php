@@ -1,6 +1,6 @@
 <?php
 // --- 1. Initialization and Data Fetching ---
-require_once __DIR__ . '/includes/app.php';
+require_once __DIR__ . '/../includes/app.php';
 $page_title = 'AI Curated Deals & Trends';
 
 try {

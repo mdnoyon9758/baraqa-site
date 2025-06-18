@@ -149,13 +149,14 @@ function load_category_and_brand_ids() {
 
 function get_dummy_product_list_from_generator() {
     global $CATEGORY_IDS, $BRAND_IDS;
+    $timestamp = time(); // Add a timestamp to make titles unique
 
     $products_data = [
-        ['title' => 'High-Performance Gaming Laptop', 'keywords' => 'gaming laptop', 'description' => 'A powerful laptop for all your gaming needs.', 'price' => 1499.99, 'rating' => 4.8, 'discount' => 15],
-        ['title' => 'Comfortable Running Shoes', 'keywords' => 'running shoes', 'description' => 'Lightweight and durable shoes for your daily run.', 'price' => 89.99, 'rating' => 4.5, 'discount' => 10],
-        ['title' => 'Automatic Espresso Machine', 'keywords' => 'coffee machine', 'description' => 'Brew perfect espresso shots at home.', 'price' => 299.50, 'rating' => 4.9, 'discount' => 20],
-        ['title' => 'Eco-Friendly Yoga Mat', 'keywords' => 'yoga mat', 'description' => 'A non-slip, eco-friendly mat.', 'price' => 45.00, 'rating' => 4.7, 'discount' => 5],
-        ['title' => 'Luxury Leather Designer Handbag', 'keywords' => 'leather handbag', 'description' => 'A stylish and elegant handbag.', 'price' => 350.00, 'rating' => 4.6, 'discount' => 25],
+        ['title' => 'Gaming Laptop ' . substr($timestamp, -4), 'keywords' => 'gaming laptop', 'description' => 'A powerful laptop for all your gaming needs.', 'price' => 1499.99, 'rating' => 4.8, 'discount' => 15],
+        ['title' => 'Running Shoes ' . substr($timestamp, -4), 'keywords' => 'running shoes', 'description' => 'Lightweight and durable shoes for your daily run.', 'price' => 89.99, 'rating' => 4.5, 'discount' => 10],
+        ['title' => 'Espresso Machine ' . substr($timestamp, -4), 'keywords' => 'coffee machine', 'description' => 'Brew perfect espresso shots at home.', 'price' => 299.50, 'rating' => 4.9, 'discount' => 20],
+        ['title' => 'Eco-Friendly Yoga Mat ' . substr($timestamp, -4), 'keywords' => 'yoga mat', 'description' => 'A non-slip, eco-friendly mat.', 'price' => 45.00, 'rating' => 4.7, 'discount' => 5],
+        ['title' => 'Designer Handbag ' . substr($timestamp, -4), 'keywords' => 'leather handbag', 'description' => 'A stylish and elegant handbag.', 'price' => 350.00, 'rating' => 4.6, 'discount' => 25],
     ];
 
     foreach ($products_data as &$product) {
