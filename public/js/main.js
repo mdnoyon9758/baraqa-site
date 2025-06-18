@@ -12,15 +12,13 @@ document.addEventListener('DOMContentLoaded', function() {
     setupWishlistButtons();
     setupClickTracker();
 
-    // Add this inside the DOMContentLoaded event listener in main.js
-
-    AOS.init({
-      duration: 800,
-      once: true,
-    });
-
-    setupMobileMenu();
-
+    // Initialize AOS (Animate On Scroll) library
+    if (typeof AOS !== 'undefined') {
+        AOS.init({
+          duration: 800,
+          once: true,
+        });
+    }
 });
 
 
@@ -34,27 +32,20 @@ function setupMobileMenu() {
 
     if (toggler && collapseMenu && overlay) {
         toggler.addEventListener('click', function() {
-            // Prevent body scroll when menu is open
             document.body.style.overflow = 'hidden';
             collapseMenu.classList.add('show');
             overlay.classList.add('show');
         });
         
-        // Function to close the menu
         const closeMenu = () => {
             document.body.style.overflow = '';
             collapseMenu.classList.remove('show');
             overlay.classList.remove('show');
         };
 
-        // Close menu when overlay is clicked
         overlay.addEventListener('click', closeMenu);
-
-        // Optional: Close menu with the Escape key
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape' && collapseMenu.classList.contains('show')) {
-                closeMenu();
-            }
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && collapseMenu.classList.contains('show')) closeMenu();
         });
     }
 }
@@ -69,28 +60,27 @@ function setupLiveSearch() {
     let searchTimeout;
 
     if (searchBox && searchResults) {
-        searchBox.addEventListener('keyup', function() {
+        searchBox.addEventListener('keyup', () => {
             clearTimeout(searchTimeout);
             let query = searchBox.value.trim();
 
             if (query.length > 1) {
-                // Debouncing to reduce API calls
                 searchTimeout = setTimeout(() => {
-                    fetch(`/bs/api/live_search.php?q=${encodeURIComponent(query)}`)
+                    // CHANGED: Removed /bs/ from fetch URL
+                    fetch(`/api/live_search.php?q=${encodeURIComponent(query)}`)
                         .then(res => res.json())
                         .then(data => {
-                            searchResults.innerHTML = ''; // Clear previous results
+                            searchResults.innerHTML = '';
                             if (data.status === 'success' && data.products.length > 0) {
-                                // Updated to use the new SEO-friendly URL structure
+                                // CHANGED: Removed /bs/ from product URL
                                 const productLinks = data.products.map(p => 
-                                    `<a href="/bs/product/${p.slug}" class="list-group-item list-group-item-action d-flex align-items-center">
+                                    `<a href="/product/${p.slug}" class="list-group-item list-group-item-action d-flex align-items-center">
                                         <img src="${p.image_url}" alt="" width="40" height="40" class="me-3 rounded">
                                         <span class="small">${p.title}</span>
                                     </a>`
                                 ).join('');
-                                // Updated to use the new SEO-friendly URL structure
-                                const viewAllLink = `<a href="/bs/search?q=${encodeURIComponent(query)}" class="list-group-item list-group-item-action text-center fw-bold bg-light">View All Results</a>`;
-
+                                // CHANGED: Removed /bs/ from search URL
+                                const viewAllLink = `<a href="/search?q=${encodeURIComponent(query)}" class="list-group-item list-group-item-action text-center fw-bold bg-light">View All Results</a>`;
                                 searchResults.innerHTML = productLinks + viewAllLink;
                                 searchResults.style.display = 'block';
                             } else {
@@ -107,8 +97,7 @@ function setupLiveSearch() {
             }
         });
 
-        // Hide search results when clicking outside
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', (event) => {
             const searchContainer = document.querySelector('.search-container');
             if (searchContainer && !searchContainer.contains(event.target)) {
                 searchResults.style.display = 'none';
@@ -145,15 +134,14 @@ function setupProductGallery() {
  * Sets up the Add/Remove from Wishlist buttons.
  */
 function setupWishlistButtons() {
-    // Using event delegation for dynamically loaded products
-    document.body.addEventListener('click', function(event) {
+    document.body.addEventListener('click', (event) => {
         const button = event.target.closest('.wishlist-btn');
         if (button) {
             event.preventDefault();
             const productId = button.dataset.productId;
             if (!productId) return;
-
-            fetch('/bs/api/wishlist_handler.php', {
+            // CHANGED: Removed /bs/ from fetch URL
+            fetch('/api/wishlist_handler.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `product_id=${productId}`
@@ -162,15 +150,12 @@ function setupWishlistButtons() {
             .then(data => {
                 if (data.status === 'success') {
                     const wishlistCount = document.getElementById('wishlist-count');
-                    if (wishlistCount) {
-                        wishlistCount.textContent = data.count;
-                    }
-                    if (data.action === 'added') {
-                        button.classList.add('active');
-                        button.querySelector('i').classList.replace('far', 'fas');
-                    } else {
-                        button.classList.remove('active');
-                        button.querySelector('i').classList.replace('fas', 'far');
+                    if (wishlistCount) wishlistCount.textContent = data.count;
+                    const icon = button.querySelector('i');
+                    if(icon) {
+                        button.classList.toggle('active');
+                        icon.classList.toggle('far');
+                        icon.classList.toggle('fas');
                     }
                 } else {
                     console.error('Wishlist error:', data.message);
@@ -186,21 +171,20 @@ function setupWishlistButtons() {
  * Sets up the click tracker for affiliate links.
  */
 function setupClickTracker() {
-    // Using event delegation
-    document.body.addEventListener('click', function(event) {
+    document.body.addEventListener('click', (event) => {
         const trackableLink = event.target.closest('.track-click');
         if (trackableLink) {
-            // No preventDefault() needed, as we want the user to navigate
             const productId = trackableLink.dataset.productId;
             if (productId) {
                 const formData = new FormData();
                 formData.append('product_id', productId);
                 
-                // Use sendBeacon for reliable background data sending
+                // CHANGED: Removed /bs/ from URL
+                const trackUrl = '/api/click_tracker.php';
                 if (navigator.sendBeacon) {
-                    navigator.sendBeacon('/bs/api/click_tracker.php', formData);
+                    navigator.sendBeacon(trackUrl, formData);
                 } else {
-                    fetch('/bs/api/click_tracker.php', { method: 'POST', body: formData, keepalive: true })
+                    fetch(trackUrl, { method: 'POST', body: formData, keepalive: true })
                     .catch(error => console.error('Click tracking fetch error:', error));
                 }
             }

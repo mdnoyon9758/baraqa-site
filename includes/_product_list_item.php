@@ -1,6 +1,8 @@
 <?php
 if (!isset($product) || !is_array($product)) { return; }
-$product_url = "/bs/product/" . ($product['slug'] ?? 'na');
+
+// CRITICAL FIX: Removed hardcoded '/bs/' from the product URL
+$product_url = "/product/" . ($product['slug'] ?? 'na');
 $image_to_display = !empty($product['image_url']) ? $product['image_url'] : "https://via.placeholder.com/150x150.png?text=No+Image";
 ?>
 <div class="card product-list-item border-0 shadow-sm">

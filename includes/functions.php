@@ -49,7 +49,8 @@ function is_logged_in() {
 function require_login() {
     if (!is_logged_in()) {
         $_SESSION['error_message'] = "Please log in to access this page.";
-        header('Location: /bs/admin/login.php');
+        // CRITICAL FIX: Removed hardcoded '/bs/' from the redirect path.
+        header('Location: /admin/login.php');
         exit();
     }
 }
@@ -62,6 +63,7 @@ function generate_csrf_token() {
 }
 
 function verify_csrf_token($token) {
+    // Note: We unset the token after verification to prevent reuse (one-time token).
     if (isset($_SESSION['csrf_token']) && !empty($token) && hash_equals($_SESSION['csrf_token'], $token)) {
         unset($_SESSION['csrf_token']);
         return true;
@@ -76,6 +78,7 @@ function e($string) {
 }
 
 function slugify($text) {
+    // This is a robust slugify function.
     $text = preg_replace('~[^\pL\d]+~u', '-', $text);
     $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
     $text = preg_replace('~[^-\w]+~', '', $text);

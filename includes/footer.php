@@ -18,13 +18,14 @@
                 </div>
             </div>
 
-            <!-- Categories Section (Now shows ALL parent categories) -->
+            <!-- Categories Section -->
             <div class="col-md-2 col-lg-2 col-xl-2 mx-auto mb-4">
                 <h6 class="text-uppercase fw-bold">Categories</h6>
                 <hr class="mb-4 mt-0 d-inline-block mx-auto footer-hr"/>
                 <?php if(!empty($all_parent_categories)): ?>
                     <?php foreach($all_parent_categories as $footer_cat): ?>
-                        <p><a href="/bs/category/<?php echo e($footer_cat['slug']); ?>" class="text-white-50"><?php echo e($footer_cat['name']); ?></a></p>
+                        <!-- CHANGED: Removed /bs/ from path -->
+                        <p><a href="/category/<?php echo e($footer_cat['slug']); ?>" class="text-white-50"><?php echo e($footer_cat['name']); ?></a></p>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <p>No categories found.</p>
@@ -37,10 +38,12 @@
                 <hr class="mb-4 mt-0 d-inline-block mx-auto footer-hr"/>
                 <?php if(!empty($nav_pages)): ?>
                     <?php foreach ($nav_pages as $page): ?>
-                         <p><a href="/bs/page/<?php echo e($page['slug']); ?>" class="text-white-50"><?php echo e($page['title']); ?></a></p>
+                         <!-- CHANGED: Removed /bs/ from path -->
+                         <p><a href="/page/<?php echo e($page['slug']); ?>" class="text-white-50"><?php echo e($page['title']); ?></a></p>
                     <?php endforeach; ?>
                 <?php endif; ?>
-                 <p><a href="/bs/wishlist" class="text-white-50">Wishlist</a></p>
+                 <!-- CHANGED: Removed /bs/ from path -->
+                 <p><a href="/wishlist" class="text-white-50">Wishlist</a></p>
             </div>
 
             <!-- Contact Section -->
@@ -55,14 +58,16 @@
     </div>
     <div class="text-center p-3 mt-4 footer-bottom">
         © <?php echo date('Y'); ?> Copyright:
-        <a class="text-white" href="/bs/"><?php echo e($SITE_SETTINGS['site_name']); ?></a>
+        <!-- CHANGED: Removed /bs/ from path -->
+        <a class="text-white" href="/"><?php echo e($SITE_SETTINGS['site_name']); ?></a>
     </div>
 </footer>
 
 <!-- JavaScript Bundles -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-<script src="/bs/public/js/main.js"></script>
+<!-- CHANGED: Removed /bs/ from path -->
+<script src="/public/js/main.js"></script>
 <script>AOS.init({duration: 800, once: true});</script>
 
 </body>

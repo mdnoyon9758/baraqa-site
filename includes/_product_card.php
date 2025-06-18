@@ -21,8 +21,8 @@ if ($product['discount_percentage'] > 0) {
 $image_to_display = !empty($product['image_url']) ? $product['image_url'] : "https://via.placeholder.com/400x400.png?text=No+Image";
 $is_in_wishlist = isset($_SESSION['wishlist']) && in_array($product['id'], $_SESSION['wishlist']);
 
-// --- New SEO-friendly URL ---
-$product_url = "/bs/product/" . e($product['slug']); 
+// CRITICAL FIX: Removed hardcoded '/bs/' from the product URL
+$product_url = "/product/" . e($product['slug']); 
 ?>
 <div class="col">
     <div class="card h-100 product-card shadow-sm border-0 position-relative">
