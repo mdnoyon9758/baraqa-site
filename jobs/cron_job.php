@@ -3,7 +3,7 @@
 
 define('CRON_JOB_RUNNING', true);
 if (php_sapi_name() !== 'cli') { die("Forbidden"); }
-set_time_limit(900);
+set_time_limit(1800); // 30 minutes execution time
 
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../config.php';
@@ -19,7 +19,7 @@ function get_active_apis() {
         
         $configs = [];
         if (empty($raw_configs)) {
-            echo "Warning: No active APIs found in the database. Please add and activate an API in the admin panel.\n";
+            echo "Warning: No active APIs found. Please add one in the admin panel.\n";
             return [];
         }
 
@@ -32,112 +32,19 @@ function get_active_apis() {
         echo "Found " . count($configs) . " active API(s): " . implode(', ', array_keys($configs)) . "\n";
         return $configs;
     } catch (PDOException $e) {
-        echo "Fatal Error: Could not fetch API configurations from database. " . $e->getMessage() . "\n";
+        echo "Fatal Error: Could not fetch API configurations. " . $e->getMessage() . "\n";
         return [];
-    }
-}
-
-function fetch_image_from_api($query, $active_apis) {
-    if (empty($active_apis)) return null;
-
-    foreach ($active_apis as $platform => $config) {
-        if (empty($config['key'])) continue;
-
-        echo "  - Trying API: " . ucfirst($platform) . " for query '{$query}'...\n";
-        $image_url = null;
-        $url = '';
-
-        switch ($platform) {
-            case 'pixabay':
-                $url = "https://pixabay.com/api/?key=" . urlencode($config['key']) . "&q=" . urlencode($query) . "&image_type=photo&per_page=3&safesearch=true";
-                break;
-            case 'pexels':
-                $url = "https://api.pexels.com/v1/search?query=" . urlencode($query) . "&per_page=1";
-                break;
-            default:
-                echo "    - SKIPPED: Platform '{$platform}' is not supported by the cron job yet.\n";
-                continue 2;
-        }
-        
-        $ch = curl_init($url);
-        if ($platform === 'pexels') {
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: ' . $config['key']]);
-        }
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $response = curl_exec($ch);
-        $error = curl_error($ch);
-        curl_close($ch);
-        
-        if ($error) {
-            echo "    - cURL Error for " . ucfirst($platform) . ": " . $error . "\n";
-            continue;
-        }
-
-        $data = json_decode($response, true);
-
-        if ($platform === 'pixabay' && !empty($data['hits'][0]['largeImageURL'])) {
-            $image_url = $data['hits'][0]['largeImageURL'];
-        } elseif ($platform === 'pexels' && !empty($data['photos'][0]['src']['large2x'])) {
-            $image_url = $data['photos'][0]['src']['large2x'];
-        }
-        
-        if ($image_url) {
-            echo "    - SUCCESS: Image found via " . ucfirst($platform) . ".\n";
-            return $image_url;
-        } else {
-            echo "    - INFO: No image found via " . ucfirst($platform) . ".\n";
-        }
-    }
-    return null;
-}
-
-function save_product_to_db($product_data, $image_url) {
-    global $pdo;
-    try {
-        $params = [
-            'title' => $product_data['title'],
-            'slug' => slugify($product_data['title']),
-            'description' => $product_data['description'],
-            'price' => $product_data['price'],
-            'image_url' => $image_url,
-            'category_id' => $product_data['category_id'],
-            'brand_id' => $product_data['brand_id'],
-            'is_published' => 1,
-            'is_manual' => 0,
-            'rating' => $product_data['rating'],
-            'discount_percentage' => $product_data['discount'],
-        ];
-
-        $check_stmt = $pdo->prepare("SELECT id FROM products WHERE slug = ?");
-        $check_stmt->execute([$params['slug']]);
-        if ($check_stmt->fetch()) {
-             echo "  - SKIPPED: Product with similar title (slug: {$params['slug']}) already exists.\n";
-             return false;
-        }
-        
-        $sql = "INSERT INTO products (title, slug, description, price, image_url, category_id, brand_id, is_published, is_manual, rating, discount_percentage) 
-                VALUES (:title, :slug, :description, :price, :image_url, :category_id, :brand_id, :is_published, :is_manual, :rating, :discount_percentage)";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
-        return true;
-    } catch (PDOException $e) {
-        echo "  - DB_ERROR: Failed to save product '{$product_data['title']}'. " . $e->getMessage() . "\n";
-        return false;
     }
 }
 
 function get_or_create_term_id($name, $table_name) {
     global $pdo;
     if (empty(trim($name))) { return null; }
-
     $stmt_check = $pdo->prepare("SELECT id FROM {$table_name} WHERE name = :name");
     $stmt_check->execute([':name' => $name]);
-    $existing = $stmt_check->fetch();
-
-    if ($existing) {
+    if ($existing = $stmt_check->fetch()) {
         return $existing['id'];
     }
-
     try {
         $slug = slugify($name);
         $sql = "INSERT INTO {$table_name} (name, slug) VALUES (:name, :slug)";
@@ -152,41 +59,142 @@ function get_or_create_term_id($name, $table_name) {
     }
 }
 
+function fetch_gallery_images($query, $active_apis, $image_count = 5) {
+    if (empty($active_apis)) return [];
+    foreach ($active_apis as $platform => $config) {
+        if (empty($config['key'])) continue;
+        echo "  - Trying API: " . ucfirst($platform) . " for a gallery of {$image_count} images...\n";
+        $gallery = [];
+        $url = '';
+        switch ($platform) {
+            case 'pixabay':
+                $url = "https://pixabay.com/api/?key=" . urlencode($config['key']) . "&q=" . urlencode($query) . "&image_type=photo&per_page={$image_count}&safesearch=true";
+                break;
+            case 'pexels':
+                 $url = "https://api.pexels.com/v1/search?query=" . urlencode($query) . "&per_page={$image_count}";
+                break;
+            default: continue 2;
+        }
+        $ch = curl_init($url);
+        if ($platform === 'pexels') {
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: ' . $config['key']]);
+        }
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($ch);
+        $error = curl_error($ch);
+        curl_close($ch);
+        if ($error) {
+            echo "    - cURL Error for " . ucfirst($platform) . ": " . $error . "\n";
+            continue;
+        }
+        $data = json_decode($response, true);
+        if ($platform === 'pixabay' && !empty($data['hits'])) {
+            foreach($data['hits'] as $hit) { $gallery[] = $hit['largeImageURL']; }
+        } elseif ($platform === 'pexels' && !empty($data['photos'])) {
+            foreach($data['photos'] as $photo) { $gallery[] = $photo['src']['large2x']; }
+        }
+        if (!empty($gallery)) {
+            echo "    - SUCCESS: Found " . count($gallery) . " images via " . ucfirst($platform) . ".\n";
+            return $gallery;
+        } else {
+             echo "    - INFO: No images found via " . ucfirst($platform) . ".\n";
+        }
+    }
+    return [];
+}
+
+function save_product_with_gallery($product_data, $gallery_urls) {
+    global $pdo;
+    if (empty($gallery_urls)) return false;
+    $main_image_url = $gallery_urls[0];
+    try {
+        $pdo->beginTransaction();
+        $params = [
+            'title' => $product_data['title'],
+            'slug' => slugify($product_data['title']),
+            'description' => $product_data['description'],
+            'price' => $product_data['price'],
+            'image_url' => $main_image_url,
+            'category_id' => $product_data['category_id'],
+            'brand_id' => $product_data['brand_id'],
+            'is_published' => 1,
+            'is_manual' => 0,
+            'rating' => $product_data['rating'],
+            'discount_percentage' => $product_data['discount'],
+        ];
+        $check_stmt = $pdo->prepare("SELECT id FROM products WHERE slug = ?");
+        $check_stmt->execute([$params['slug']]);
+        if ($check_stmt->fetch()) {
+             echo "  - SKIPPED: Product with slug '{$params['slug']}' already exists.\n";
+             $pdo->rollBack();
+             return false;
+        }
+        $sql = "INSERT INTO products (title, slug, description, price, image_url, category_id, brand_id, is_published, is_manual, rating, discount_percentage) 
+                VALUES (:title, :slug, :description, :price, :image_url, :category_id, :brand_id, :is_published, :is_manual, :rating, :discount_percentage)";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $product_id = $pdo->lastInsertId();
+        if ($product_id && count($gallery_urls) > 1) {
+            $gallery_sql = "INSERT INTO product_gallery (product_id, image_url) VALUES (:product_id, :image_url)";
+            $gallery_stmt = $pdo->prepare($gallery_sql);
+            for ($i = 1; $i < count($gallery_urls); $i++) {
+                $gallery_stmt->execute([':product_id' => $product_id, ':image_url' => $gallery_urls[$i]]);
+            }
+        }
+        $pdo->commit();
+        return true;
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        echo "  - DB_ERROR: Failed to save product '{$product_data['title']}'. " . $e->getMessage() . "\n";
+        return false;
+    }
+}
+
 function get_dummy_product_list_from_generator() {
-    $timestamp = time(); 
-    return [
-        ['title' => 'Gaming Laptop ' . substr($timestamp, -4), 'keywords' => 'gaming laptop', 'description' => 'A powerful laptop for all your gaming needs.', 'price' => 1499.99, 'rating' => 4.8, 'discount' => 15, 'category_name' => 'Electronics', 'brand_name' => 'TechMaster'],
-        ['title' => 'Running Shoes ' . substr($timestamp, -4), 'keywords' => 'running shoes', 'description' => 'Lightweight and durable shoes.', 'price' => 89.99, 'rating' => 4.5, 'discount' => 10, 'category_name' => 'Fashion', 'brand_name' => 'SpeedFlex'],
-        ['title' => 'Espresso Machine ' . substr($timestamp, -4), 'keywords' => 'coffee machine', 'description' => 'Brew perfect espresso shots.', 'price' => 299.50, 'rating' => 4.9, 'discount' => 20, 'category_name' => 'Home & Kitchen', 'brand_name' => 'BrewRight'],
-        ['title' => 'Eco-Friendly Yoga Mat ' . substr($timestamp, -4), 'keywords' => 'yoga mat', 'description' => 'A non-slip, eco-friendly mat.', 'price' => 45.00, 'rating' => 4.7, 'discount' => 5, 'category_name' => 'Sports & Outdoors', 'brand_name' => 'ZenFlow'],
-        ['title' => 'Designer Handbag ' . substr($timestamp, -4), 'keywords' => 'leather handbag', 'description' => 'A stylish and elegant handbag.', 'price' => 350.00, 'rating' => 4.6, 'discount' => 25, 'category_name' => 'Fashion', 'brand_name' => 'VogueStitch'],
-    ];
+    $product_adjectives = ['High-Performance', 'Eco-Friendly', 'Luxury', 'Ergonomic', 'Smart', 'Classic', 'Next-Gen', 'Compact', 'Professional', 'Artisan'];
+    $product_nouns = ['Gadget', 'Device', 'Appliance', 'Kit', 'Tool', 'System', 'Wearable', 'Accessory', 'Solution', 'Unit'];
+    $product_categories = ['Tech & Gadgets', 'Home Automation', 'Health & Wellness', 'Outdoor & Adventure', 'Fashion & Style', 'Kitchenware', 'Office & Productivity', 'Automotive', 'Pet Supplies', 'Travel Gear'];
+    $product_brands = ['InnovateX', 'EcoLife', 'Aura', 'Titan', 'Zenith', 'Fusion', 'Evolve', 'Quantum', 'Nexus', 'Vertex'];
+    $products = [];
+    for ($i = 0; $i < 30; $i++) {
+        $adj = $product_adjectives[array_rand($product_adjectives)];
+        $noun = $product_nouns[array_rand($product_nouns)];
+        $cat = $product_categories[array_rand($product_categories)];
+        $brand = $product_brands[array_rand($product_brands)];
+        $products[] = [
+            'title' => "{$adj} {$noun} " . rand(1000, 9999),
+            'keywords' => strtolower("{$adj} {$noun}"),
+            'description' => "An innovative {$adj} {$noun} designed for modern life. Perfect for the {$cat} category, brought to you by {$brand}.",
+            'price' => round(rand(5000, 200000) / 100, 2),
+            'rating' => round(rand(35, 50) / 10, 1),
+            'discount' => rand(5, 40),
+            'category_name' => $cat,
+            'brand_name' => $brand,
+        ];
+    }
+    return $products;
 }
 
 function run_product_import() {
     $active_apis = get_active_apis();
     if (empty($active_apis)) { return; }
-
     $products_to_process = get_dummy_product_list_from_generator();
-    echo "Found " . count($products_to_process) . " products to process...\n";
-
+    echo "Generated " . count($products_to_process) . " unique products to process...\n";
     $added_count = 0;
     foreach ($products_to_process as $product_info) {
         echo "---------------------------------------------------\n";
         echo "Processing: " . $product_info['title'] . "\n";
-        
-        $image_url = fetch_image_from_api($product_info['keywords'], $active_apis);
-
-        if ($image_url) {
+        $image_count = rand(3, 7);
+        $gallery_urls = fetch_gallery_images($product_info['keywords'], $active_apis, $image_count);
+        if (!empty($gallery_urls)) {
             $product_info['category_id'] = get_or_create_term_id($product_info['category_name'], 'categories');
             $product_info['brand_id'] = get_or_create_term_id($product_info['brand_name'], 'brands');
-
-            if (save_product_to_db($product_info, $image_url)) {
+            if (save_product_with_gallery($product_info, $gallery_urls)) {
                 $added_count++;
-                echo "  -> SUCCESS: Product '{$product_info['title']}' was added to the database.\n";
+                echo "  -> SUCCESS: Product '{$product_info['title']}' and its gallery were added to the database.\n";
             }
         } else {
-            echo "  -> FAILED & SKIPPED: Could not fetch an image for '{$product_info['title']}' from any active API.\n";
+            echo "  -> FAILED & SKIPPED: Could not fetch any images for '{$product_info['title']}'.\n";
         }
     }
     echo "---------------------------------------------------\n";
