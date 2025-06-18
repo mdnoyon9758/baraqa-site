@@ -68,20 +68,21 @@ require_once __DIR__ . '/includes/header.php';
 
     <div class="row g-4">
         <!-- Left Column: Product Gallery -->
-        <div class="col-lg-5">
-             <div class="product-gallery">
-                <div class="main-image-container mb-2">
-                    <img id="mainImage" src="<?php echo e(!empty($gallery_images[0]) ? $gallery_images[0] : 'https://placehold.co/600x600/e2e8f0/333?text=No+Image'); ?>" class="img-fluid rounded" alt="<?php echo e($product['title']); ?>">
-                </div>
-                <?php if (count($gallery_images) > 1): ?>
-                <div class="thumbnail-strip">
-                    <?php foreach ($gallery_images as $index => $img_url): ?>
-                        <img src="<?php echo e($img_url); ?>" onclick="changeImage(this)" class="img-thumbnail thumbnail-item <?php echo $index === 0 ? 'active' : ''; ?>" alt="Thumbnail <?php echo $index + 1; ?>">
-                    <?php endforeach; ?>
-                </div>
-                <?php endif; ?>
-            </div>
+        <!-- Left Column: Product Gallery -->
+<div class="col-lg-5">
+    <div class="product-gallery-amazon">
+        <div class="main-image-container mb-2 text-center">
+            <img id="mainImage" src="<?php echo e(!empty($gallery_images[0]) ? $gallery_images[0] : 'https://placehold.co/600x600/e2e8f0/333?text=No+Image'); ?>" class="img-fluid rounded" alt="<?php echo e($product['title']); ?>">
         </div>
+        <?php if (count($gallery_images) > 1): ?>
+        <div class="thumbnail-strip">
+            <?php foreach ($gallery_images as $index => $img_url): ?>
+                <img src="<?php echo e($img_url); ?>" onclick="changeImage(this)" class="img-thumbnail thumbnail-item <?php echo $index === 0 ? 'active' : ''; ?>" alt="Thumbnail of <?php echo e($product['title']); ?>">
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
 
         <!-- Middle Column: Product Details -->
         <div class="col-lg-4">

@@ -1,6 +1,6 @@
 /*
 =================================
-BARAQA - Main Stylesheet (Final Version)
+BARAQA - Main Stylesheet (Final Version with all fixes)
 =================================
 */
 
@@ -9,7 +9,6 @@ BARAQA - Main Stylesheet (Final Version)
     --amazon-blue: #131921;
     --amazon-dark-blue: #232F3E;
     --amazon-orange: #FF9900;
-    --amazon-light-blue: #23A2F0;
     --text-dark: #111;
     --text-light: #fff;
     --border-color: #ddd;
@@ -38,6 +37,7 @@ a:hover {
     position: relative;
     margin-bottom: 30px;
     font-weight: 600;
+    text-align: center;
 }
 .section-title span {
     background-color: var(--body-bg);
@@ -58,10 +58,7 @@ a:hover {
     background-color: var(--amazon-dark-blue);
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
-.top-bar {
-    background-color: var(--amazon-blue);
-    font-size: 0.85rem;
-}
+.top-bar { background-color: var(--amazon-blue); font-size: 0.85rem; }
 .top-link {
     color: #ddd; padding: 5px 10px;
     border-radius: 3px; transition: background-color 0.2s;
@@ -80,24 +77,16 @@ a:hover {
     background-color: #f3f3f3; border: 1px solid #ced4da; border-right: 0;
 }
 .search-form-amazon .search-button {
-    background-color: var(--amazon-orange);
-    border-color: var(--amazon-orange);
+    background-color: var(--amazon-orange); border-color: var(--amazon-orange);
     color: var(--text-dark);
 }
-.search-form-amazon .search-button:hover {
-    background-color: #e68a00; border-color: #e68a00;
-}
-.sub-nav-bar {
-    background-color: #37475A; font-size: 0.9rem;
-    border-top: 1px solid #4a5b70;
-}
+.search-form-amazon .search-button:hover { background-color: #e68a00; border-color: #e68a00; }
+.sub-nav-bar { background-color: #37475A; font-size: 0.9rem; border-top: 1px solid #4a5b70; }
 .sub-nav-link { color: #fff; padding: 6px 12px; border-radius: 3px; }
 .sub-nav-link:hover { outline: 1px solid #fff; color: #fff; }
 
 
 /* --- 3. Homepage Styles --- */
-
-/* Hero Carousel */
 .hero-section-amazon .hero-slide-item {
     height: 60vh; min-height: 450px;
     background-size: cover; background-position: center;
@@ -112,15 +101,13 @@ a:hover {
 .hero-slide-item .container { position: relative; z-index: 2; }
 .hero-price { color: var(--amazon-orange); font-weight: bold; }
 
-/* Category Cards */
 .category-card-amazon-v2 {
     display: block; border-radius: 8px; overflow: hidden;
     color: #111; background-color: #fff; border: 1px solid var(--border-color);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .category-card-amazon-v2:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    transform: translateY(-5px); box-shadow: 0 6px 20px rgba(0,0,0,0.12);
 }
 .category-card-image {
     height: 150px; background-size: cover; background-position: center;
@@ -128,33 +115,19 @@ a:hover {
 }
 .category-card-amazon-v2:hover .category-card-image { transform: scale(1.05); }
 
-/* Deal & Featured Cards */
-.deal-card-amazon, .featured-card-amazon {
-    background-color: #fff; border: 1px solid var(--border-color);
-}
-.deal-img {
-    width: 100px; height: 100px;
-    object-fit: cover; border-radius: 4px;
-}
-.deal-price {
-    font-size: 1.5rem; font-weight: bold; color: var(--danger-red);
-}
+.deal-card-amazon, .featured-card-amazon { background-color: #fff; border: 1px solid var(--border-color); }
+.deal-img { width: 100px; height: 100px; object-fit: cover; border-radius: 4px; }
+.deal-price { font-size: 1.5rem; font-weight: bold; color: var(--danger-red); }
 
-/* Brand Carousel */
 .brand-carousel .slick-slide { margin: 0 15px; }
 .brand-carousel .brand-item img {
     max-height: 50px; width: auto; margin: 0 auto;
     opacity: 0.7; filter: grayscale(80%);
     transition: opacity 0.3s, filter 0.3s;
 }
-.brand-carousel .brand-item a:hover img {
-    opacity: 1; filter: grayscale(0%);
-}
+.brand-carousel .brand-item a:hover img { opacity: 1; filter: grayscale(0%); }
 
-/* Final CTA Section */
-.cta-section-final {
-    background: linear-gradient(45deg, var(--amazon-dark-blue), var(--amazon-blue));
-}
+.cta-section-final { background: linear-gradient(45deg, var(--amazon-dark-blue), var(--amazon-blue)); }
 
 
 /* --- 4. Product Card (General) --- */
@@ -163,13 +136,8 @@ a:hover {
     border: 1px solid var(--border-color);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-.product-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
-}
-.product-card .card-img-top {
-    height: 220px; object-fit: contain; padding: 1rem;
-}
+.product-card:hover { transform: translateY(-5px); box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15); }
+.product-card .card-img-top { height: 220px; object-fit: contain; padding: 1rem; }
 .product-card .card-title {
     font-size: 0.9rem; font-weight: 500;
     display: -webkit-box; -webkit-line-clamp: 2;
@@ -182,38 +150,30 @@ a:hover {
 .rating-stars { font-size: 0.8rem; }
 
 
-/* --- 5. Product Page Styles --- */
+/* --- 5. Product Page Styles (with Fixes) --- */
 .product-page-amazon .breadcrumb a { color: var(--text-dark); }
-.product-gallery .main-image-container img { transition: opacity 0.3s ease; }
-.product-gallery .thumbnail-strip { display: flex; gap: 0.5rem; }
-.product-gallery .thumbnail-item {
+.product-gallery-amazon .main-image-container img { transition: opacity 0.3s ease; }
+.thumbnail-strip { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.thumbnail-item {
+    height: 60px;
+    width: 60px;
+    object-fit: cover;
     cursor: pointer; opacity: 0.6;
     border: 2px solid transparent;
     transition: opacity 0.2s, border-color 0.2s;
+    padding: 2px !important;
 }
-.product-gallery .thumbnail-item:hover { opacity: 1; }
-.product-gallery .thumbnail-item.active {
-    opacity: 1; border-color: var(--amazon-orange);
-}
+.thumbnail-item:hover { opacity: 1; }
+.thumbnail-item.active { opacity: 1; border-color: var(--amazon-orange); }
+
 .product-title-amazon { font-size: 1.75rem; font-weight: 500; }
 .product-price-amazon { font-size: 1.75rem; color: var(--danger-red); }
 .product-description-amazon { font-size: 0.95rem; }
-.buy-box-amazon {
-    border: 1px solid #c7c7c7;
-    border-radius: 8px;
-    background-color: #fff;
-}
-.buy-box-amazon .price-section-buybox { font-size: 1.25rem; }
+.buy-box-amazon { border: 1px solid #c7c7c7; border-radius: 8px; background-color: #fff; }
 .buy-box-amazon .stock-status-amazon.in-stock { font-size: 1.1rem; color: #007600; font-weight: 600; }
 .buy-box-amazon .stock-status-amazon.out-of-stock { font-size: 1.1rem; color: var(--danger-red); font-weight: 600; }
-.buy-box-amazon .btn-primary {
-    background-color: var(--amazon-orange);
-    border-color: #a88734 #9c7e31 #846a29;
-}
-.buy-box-amazon .btn-secondary {
-    background-color: #e7e9ec;
-    border-color: #adb1b8 #a2a6ac #8d9096;
-}
+.buy-box-amazon .btn-primary { background-color: var(--amazon-orange); border-color: var(--amazon-orange); }
+.buy-box-amazon .btn-secondary { background-color: #e7e9ec; border-color: #adb1b8; }
 
 
 /* --- 6. Filter & Category Page Styles --- */
@@ -231,16 +191,12 @@ a:hover {
     padding: 15px 0; transition: background-color 0.2s;
 }
 .back-to-top-btn:hover { background-color: #4a5b70; color: #fff; }
-.site-footer-amazon {
-    background-color: var(--amazon-dark-blue);
-    color: #ddd; font-size: 0.9rem;
-}
+.site-footer-amazon { background-color: var(--amazon-dark-blue); color: #ddd; font-size: 0.9rem; }
 .footer-heading { color: #fff; font-weight: bold; margin-bottom: 1rem; }
 .footer-links { padding-left: 0; list-style: none; }
 .footer-links li { margin-bottom: 0.5rem; }
 .footer-links a { color: #ddd; }
 .footer-links a:hover { color: var(--amazon-orange); text-decoration: underline; }
-.footer-contact-info { color: #ddd; }
 .social-icons-footer .social-icon { color: #ddd; font-size: 1.2rem; margin-right: 15px; }
 .social-icons-footer .social-icon:hover { color: #fff; }
 .footer-divider { border-color: #37475A; }
