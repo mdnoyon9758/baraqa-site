@@ -1,37 +1,44 @@
-# Use the official PHP 8.2 image with Apache
+# Start with the official PHP 8.2 image that includes Apache
 FROM php:8.2-apache
 
-# --- 1. Install necessary system dependencies ---
-# gd for image processing, pdo_pgsql and libpq-dev for PostgreSQL connection
+# --- 1. System Dependencies ---
+# Install libraries needed for PHP extensions (gd for images, pdo_pgsql for database)
+# Also install zip/unzip which are useful utilities.
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
     libpq-dev \
+    zip \
+    unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd pdo pdo_pgsql
 
-# --- 2. Enable Apache's mod_rewrite ---
-# This is the crucial step for pretty URLs
+# --- 2. Apache Configuration ---
+# Enable mod_rewrite to allow .htaccess files to work for pretty URLs
 RUN a2enmod rewrite
 
-# --- 3. Set the working directory ---
+# --- 3. Application Setup ---
+# Set the working directory inside the container
 WORKDIR /var/www/html
 
-# --- 4. Copy application files ---
-# Copy the .htaccess file first so it gets the correct permissions
-COPY .htaccess .
-# Copy the rest of the application code
+# Copy all your application files into the working directory
 COPY . .
 
-# --- 5. Fix permissions for Apache ---
-# Ensure the web server has permission to write to necessary folders
-RUN chown -R www-data:www-data /var/www/html/public/images \
-    && chown -R www-data:www-data /var/www/html/jobs/logs
-RUN chmod -R 775 /var/www/html/public/images \
-    && chmod -R 775 /var/www/html/jobs/logs
+# --- 4. Create Necessary Directories ---
+# This is the critical fix. Create directories before trying to set permissions on them.
+# The -p flag ensures parent directories are created if they don't exist.
+RUN mkdir -p public/images \
+    && mkdir -p public/fonts \
+    && mkdir -p jobs/logs
 
-# The following line is from the default php:apache image.
-# It tells Apache how to handle requests. It's good practice to keep it.
-# You don't need to add this if it's not already there. The base image handles it.
-# EXPOSE 80
+# --- 5. Set Permissions ---
+# Set the Apache user (www-data) as the owner of the directories
+# where your application needs to write files (e.g., generated images, logs).
+# This allows PHP to create files in these folders.
+RUN chown -R www-data:www-data /var/www/html/public/images \
+    && chown -R www-data:www-data /var/www/html/public/fonts \
+    && chown -R www-data:www-data /var/www/html/jobs/logs
+
+# The base image (php:8.2-apache) already handles exposing port 80 and starting Apache.
+# No need for an EXPOSE or CMD command unless you want to override the default.
