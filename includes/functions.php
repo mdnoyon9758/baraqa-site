@@ -42,14 +42,13 @@ function get_all_pages() {
 
 // --- Security & Authentication Functions ---
 
-function is_logged_in() {
+function is_logged_in() { // This is for admin
     return isset($_SESSION['admin_id']);
 }
 
-function require_login() {
+function require_login() { // This is for admin
     if (!is_logged_in()) {
-        $_SESSION['error_message'] = "Please log in to access this page.";
-        // CRITICAL FIX: Removed hardcoded '/bs/' from the redirect path.
+        set_flash_message("Please log in to access this page.", "warning");
         header('Location: /admin/login.php');
         exit();
     }
@@ -63,7 +62,6 @@ function generate_csrf_token() {
 }
 
 function verify_csrf_token($token) {
-    // Note: We unset the token after verification to prevent reuse (one-time token).
     if (isset($_SESSION['csrf_token']) && !empty($token) && hash_equals($_SESSION['csrf_token'], $token)) {
         unset($_SESSION['csrf_token']);
         return true;
@@ -78,7 +76,6 @@ function e($string) {
 }
 
 function slugify($text) {
-    // This is a robust slugify function.
     $text = preg_replace('~[^\pL\d]+~u', '-', $text);
     $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
     $text = preg_replace('~[^-\w]+~', '', $text);
@@ -91,26 +88,50 @@ function slugify($text) {
     return $text;
 }
 
-function display_flash_messages() {
-    if (isset($_SESSION['success_message'])) {
-        echo '<div class="alert alert-success alert-dismissible fade show" role="alert">';
-        echo '<strong>Success!</strong> ' . e($_SESSION['success_message']);
-        echo '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
-        echo '</div>';
-        unset($_SESSION['success_message']);
+// --- NEW AND IMPROVED FLASH MESSAGE FUNCTIONS ---
+
+/**
+ * Sets a flash message in the session to be displayed on the next page load.
+ *
+ * @param string $message The message to display.
+ * @param string $type The type of message (e.g., 'success', 'danger', 'warning', 'info').
+ */
+function set_flash_message($message, $type = 'success') {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
     }
-    if (isset($_SESSION['error_message'])) {
-        echo '<div class="alert alert-danger alert-dismissible fade show" role="alert">';
-        echo '<strong>Error!</strong> ' . e($_SESSION['error_message']);
+    $_SESSION['flash_message'] = ['message' => $message, 'type' => $type];
+}
+
+/**
+ * Displays and then clears the flash message from the session.
+ */
+function display_flash_messages() {
+    if (isset($_SESSION['flash_message'])) {
+        $flash = $_SESSION['flash_message'];
+        $message = e($flash['message']);
+        $type = e($flash['type']);
+        $alert_details = [
+            'success' => ['icon' => 'fa-check-circle', 'title' => 'Success!'],
+            'danger'  => ['icon' => 'fa-times-circle', 'title' => 'Error!'],
+            'warning' => ['icon' => 'fa-exclamation-triangle', 'title' => 'Warning!'],
+            'info'    => ['icon' => 'fa-info-circle', 'title' => 'Notice!']
+        ];
+        $icon = $alert_details[$type]['icon'] ?? 'fa-info-circle';
+        $title = $alert_details[$type]['title'] ?? 'Message';
+        echo '<div class="alert alert-' . $type . ' alert-dismissible fade show" role="alert">';
+        echo '<strong><i class="fas ' . $icon . ' me-2"></i>' . $title . '</strong> ' . $message;
         echo '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
         echo '</div>';
-        unset($_SESSION['error_message']);
+        unset($_SESSION['flash_message']);
     }
 }
+
 
 // --- AI & Data Analysis Functions ---
 
 function calculateTrendScore($rating, $reviews, $discount) {
+    // ... Function remains unchanged ...
     $w_rating = 0.5; $w_reviews = 0.3; $w_discount = 0.2;
     $normalized_rating = ($rating / 5) * 100;
     $normalized_reviews = ($reviews > 0) ? (log10($reviews) / log10(100000)) * 100 : 0;
@@ -123,12 +144,14 @@ function calculateTrendScore($rating, $reviews, $discount) {
 // --- Encryption Functions ---
 
 function encrypt_data($data) {
+    // ... Function remains unchanged ...
     if (!defined('ENCRYPTION_KEY') || !defined('ENCRYPTION_IV') || empty($data)) return $data;
     $cipher = "aes-256-cbc";
     return openssl_encrypt($data, $cipher, ENCRYPTION_KEY, 0, ENCRYPTION_IV);
 }
 
 function decrypt_data($encrypted_data) {
+    // ... Function remains unchanged ...
     if (!defined('ENCRYPTION_KEY') || !defined('ENCRYPTION_IV') || empty($encrypted_data)) return $encrypted_data;
     $cipher = "aes-256-cbc";
     return openssl_decrypt($encrypted_data, $cipher, ENCRYPTION_KEY, 0, ENCRYPTION_IV);
@@ -137,6 +160,7 @@ function decrypt_data($encrypted_data) {
 // --- Activity Logging ---
 
 function log_admin_activity($action, $target_type = null, $target_id = null) {
+    // ... Function remains unchanged ...
     global $pdo;
     if (defined('CRON_JOB_RUNNING')) {
         return;
@@ -158,7 +182,8 @@ function log_admin_activity($action, $target_type = null, $target_id = null) {
         error_log('Failed to log admin activity: ' . $e->getMessage());
     }
 }
-// Add this function at the end of functions.php
+
+// This function is for frontend user authentication
 function is_user_logged_in() {
     return isset($_SESSION['user_id']);
 }

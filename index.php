@@ -83,28 +83,58 @@ switch ($main_route) {
         require __DIR__ . '/search.php';
         break;
     
-    // --- NEWLY ADDED FOR USER AUTHENTICATION ---
+    // --- Route for USER AUTHENTICATION ---
     case 'auth':
-        // Handles routes like /auth/login.php, /auth/register.php
+        // Handles routes like /auth/login, /auth/register
         if (isset($segments[1])) {
-            $auth_page = $segments[1];
-            // Security: Sanitize filename to prevent directory traversal
-            $auth_page = basename($auth_page); 
-            
-            if (file_exists(__DIR__ . '/auth/' . $auth_page)) {
-                require __DIR__ . '/auth/' . $auth_page;
+            $auth_page_name = $segments[1];
+            // Security: Prevent directory traversal and only allow specific filenames
+            $allowed_auth_pages = ['login.php', 'register.php', 'logout.php'];
+            $auth_page_file = $auth_page_name . '.php';
+
+            if (in_array($auth_page_file, $allowed_auth_pages) && file_exists(__DIR__ . '/auth/' . $auth_page_file)) {
+                require __DIR__ . '/auth/' . $auth_page_file;
             } else {
                 http_response_code(404);
                 require __DIR__ . '/views/404.php';
             }
         } else {
             // If someone just goes to /auth, redirect to login
-            header('Location: /auth/login.php');
+            header('Location: /auth/login');
+            exit;
+        }
+        break;
+
+    // --- NEWLY ADDED FOR USER ACCOUNT ---
+    case 'user':
+        // Handles routes like /user/dashboard, /user/orders, /user/security
+        if (isset($segments[1])) {
+            $user_page_name = $segments[1];
+            // Whitelist allowed pages for security
+            $allowed_user_pages = ['dashboard.php', 'orders.php', 'security.php'];
+            $user_page_file = $user_page_name . '.php';
+
+            if (in_array($user_page_file, $allowed_user_pages) && file_exists(__DIR__ . '/user/' . $user_page_file)) {
+                require __DIR__ . '/user/' . $user_page_file;
+            } else {
+                // If a user page does not exist (e.g., /user/invalid-page)
+                http_response_code(404);
+                require __DIR__ . '/views/404.php';
+            }
+        } else {
+            // If someone just goes to /user, redirect them to the dashboard
+            header('Location: /user/dashboard');
             exit;
         }
         break;
 
     default:
+        // If the path looks like a filename (e.g., admin.css), it's likely a static asset. Let the web server handle it.
+        // This check prevents the 404 page from showing for CSS/JS files if .htaccess isn't configured perfectly.
+        if (preg_match('/\.(?:css|js|jpg|jpeg|png|gif|ico|svg)$/', $request_path)) {
+            return false; // Let the server handle the request
+        }
+
         // If no route matches, show a 404 error
         http_response_code(404);
         require __DIR__ . '/views/404.php';

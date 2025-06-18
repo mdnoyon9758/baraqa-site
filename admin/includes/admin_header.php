@@ -11,6 +11,10 @@ $menu_items = [
     ['name' => 'Categories', 'url' => $admin_base_url . 'categories.php', 'icon' => 'tags'],
     ['name' => 'Brands', 'url' => $admin_base_url . 'manage_brands.php', 'icon' => 'bookmark-star'],
     ['name' => 'Pages', 'url' => $admin_base_url . 'manage_pages.php', 'icon' => 'file-earmark-text'],
+    
+    // --- NEWLY ADDED FOR USER MANAGEMENT ---
+    ['name' => 'User Management', 'url' => $admin_base_url . 'users.php', 'icon' => 'person-circle'],
+
     ['name' => 'API Config', 'url' => $admin_base_url . 'manage_api.php', 'icon' => 'cpu'],
     ['name' => 'Task Scheduler', 'url' => $admin_base_url . 'scheduler.php', 'icon' => 'clock-history'],
     ['name' => 'Site Settings', 'url' => $admin_base_url . 'settings.php', 'icon' => 'gear'],
@@ -66,8 +70,8 @@ $full_title = isset($page_title) ? e($page_title) . ' - ' . e($site_title) : e($
             <div class="list-group list-group-flush">
                 <?php foreach ($menu_items as $item): ?>
                     <?php 
-                    // Check if the current page URI ends with the menu item's URL
-                    $is_active = (str_ends_with($current_page_uri, $item['url'])) ? 'active' : ''; 
+                    // Check if the current page URI matches the menu item's URL exactly for better accuracy
+                    $is_active = ($current_page_uri === $item['url']) ? 'active' : ''; 
                     ?>
                     <a href="<?php echo e($item['url']); ?>" class="list-group-item list-group-item-action bg-dark text-white <?php echo $is_active; ?>">
                         <svg class="bi me-2" width="16" height="16"><use xlink:href="#<?php echo e($item['icon']); ?>"/></svg> 
