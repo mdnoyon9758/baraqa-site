@@ -1,26 +1,20 @@
 <?php
 // File: jobs/cron_job.php
 
-// Define a constant to signal that this is a cron job execution
 define('CRON_JOB_RUNNING', true);
-
-// This script should only be run from the command line, not a browser
-if (php_sapi_name() !== 'cli') {
-    http_response_code(403);
-    die("Forbidden: This script is for command-line execution only.");
-}
-
-// Allow the script to run for a long time (e.g., 15 minutes)
+if (php_sapi_name() !== 'cli') { die("Forbidden"); }
 set_time_limit(900);
 
-// Load the core application files
-require_once __DIR__ . '/../includes/functions.php'; // This also loads db_connect.php
-require_once __DIR__ . '/../config.php'; // For encryption keys
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../config.php';
 
 echo "Cron Job Started at " . date('Y-m-d H:i:s') . "\n";
 echo "---------------------------------------------------\n";
 
-// --- 1. Fetch ALL active API configurations from the database ---
+// --- Global variables for storing fetched IDs ---
+$CATEGORY_IDS = [];
+$BRAND_IDS = [];
+
 function get_active_apis() {
     global $pdo;
     try {
@@ -34,7 +28,6 @@ function get_active_apis() {
         }
 
         foreach ($raw_configs as $config) {
-            // Decrypt the API key before use
             $configs[strtolower($config['api_name'])] = [
                 'key' => decrypt_data($config['api_key']),
                 'tag' => $config['affiliate_tag']
@@ -48,11 +41,9 @@ function get_active_apis() {
     }
 }
 
-// --- 2. Generic function to fetch an image from ANY supported platform ---
 function fetch_image_from_api($query, $active_apis) {
     if (empty($active_apis)) return null;
 
-    // Try each active API in order until we get an image
     foreach ($active_apis as $platform => $config) {
         if (empty($config['key'])) continue;
 
@@ -60,7 +51,6 @@ function fetch_image_from_api($query, $active_apis) {
         $image_url = null;
         $url = '';
 
-        // Build the URL based on the platform
         switch ($platform) {
             case 'pixabay':
                 $url = "https://pixabay.com/api/?key=" . urlencode($config['key']) . "&q=" . urlencode($query) . "&image_type=photo&per_page=3&safesearch=true";
@@ -68,10 +58,9 @@ function fetch_image_from_api($query, $active_apis) {
             case 'pexels':
                 $url = "https://api.pexels.com/v1/search?query=" . urlencode($query) . "&per_page=1";
                 break;
-            // Add other APIs here in the future
             default:
                 echo "    - SKIPPED: Platform '{$platform}' is not supported by the cron job yet.\n";
-                continue 2; // Skip to the next API in the loop
+                continue 2;
         }
         
         $ch = curl_init($url);
@@ -90,7 +79,6 @@ function fetch_image_from_api($query, $active_apis) {
 
         $data = json_decode($response, true);
 
-        // Extract image URL based on platform's response structure
         if ($platform === 'pixabay' && !empty($data['hits'][0]['largeImageURL'])) {
             $image_url = $data['hits'][0]['largeImageURL'];
         } elseif ($platform === 'pexels' && !empty($data['photos'][0]['src']['large2x'])) {
@@ -99,33 +87,31 @@ function fetch_image_from_api($query, $active_apis) {
         
         if ($image_url) {
             echo "    - SUCCESS: Image found via " . ucfirst($platform) . ".\n";
-            return $image_url; // Return the first image we find
+            return $image_url;
         } else {
             echo "    - INFO: No image found via " . ucfirst($platform) . ".\n";
         }
     }
-    return null; // Return null if no API could find an image
+    return null;
 }
 
-// --- 3. Function to save the product to the database ---
 function save_product_to_db($product_data, $image_url) {
     global $pdo;
     try {
         $params = [
             'title' => $product_data['title'],
-            'slug' => slugify($product_data['title']), // Slugify function from functions.php
+            'slug' => slugify($product_data['title']),
             'description' => $product_data['description'],
             'price' => $product_data['price'],
             'image_url' => $image_url,
             'category_id' => $product_data['category_id'],
             'brand_id' => $product_data['brand_id'],
             'is_published' => 1,
-            'is_manual' => 0, // Mark as API-added
+            'is_manual' => 0,
             'rating' => $product_data['rating'],
             'discount_percentage' => $product_data['discount'],
         ];
 
-        // Check for duplicate slug before inserting
         $check_stmt = $pdo->prepare("SELECT id FROM products WHERE slug = ?");
         $check_stmt->execute([$params['slug']]);
         if ($check_stmt->fetch()) {
@@ -144,17 +130,48 @@ function save_product_to_db($product_data, $image_url) {
     }
 }
 
-// --- 4. Main execution logic ---
-function run_product_import() {
-    $active_apis = get_active_apis();
-    if (empty($active_apis)) {
-        return; // Stop execution if no APIs are configured
+function load_category_and_brand_ids() {
+    global $pdo, $CATEGORY_IDS, $BRAND_IDS;
+    try {
+        $CATEGORY_IDS = $pdo->query("SELECT id FROM categories")->fetchAll(PDO::FETCH_COLUMN);
+        $BRAND_IDS = $pdo->query("SELECT id FROM brands")->fetchAll(PDO::FETCH_COLUMN);
+
+        if (empty($CATEGORY_IDS)) {
+            echo "Warning: No categories found in the database. Products cannot be assigned to a category.\n";
+        }
+        if (empty($BRAND_IDS)) {
+            echo "Warning: No brands found in the database. Products cannot be assigned to a brand.\n";
+        }
+    } catch (PDOException $e) {
+        echo "DB Error loading category/brand IDs: " . $e->getMessage() . "\n";
+    }
+}
+
+function get_dummy_product_list_from_generator() {
+    global $CATEGORY_IDS, $BRAND_IDS;
+
+    $products_data = [
+        ['title' => 'High-Performance Gaming Laptop', 'keywords' => 'gaming laptop', 'description' => 'A powerful laptop for all your gaming needs.', 'price' => 1499.99, 'rating' => 4.8, 'discount' => 15],
+        ['title' => 'Comfortable Running Shoes', 'keywords' => 'running shoes', 'description' => 'Lightweight and durable shoes for your daily run.', 'price' => 89.99, 'rating' => 4.5, 'discount' => 10],
+        ['title' => 'Automatic Espresso Machine', 'keywords' => 'coffee machine', 'description' => 'Brew perfect espresso shots at home.', 'price' => 299.50, 'rating' => 4.9, 'discount' => 20],
+        ['title' => 'Eco-Friendly Yoga Mat', 'keywords' => 'yoga mat', 'description' => 'A non-slip, eco-friendly mat.', 'price' => 45.00, 'rating' => 4.7, 'discount' => 5],
+        ['title' => 'Luxury Leather Designer Handbag', 'keywords' => 'leather handbag', 'description' => 'A stylish and elegant handbag.', 'price' => 350.00, 'rating' => 4.6, 'discount' => 25],
+    ];
+
+    foreach ($products_data as &$product) {
+        $product['category_id'] = !empty($CATEGORY_IDS) ? $CATEGORY_IDS[array_rand($CATEGORY_IDS)] : null;
+        $product['brand_id'] = !empty($BRAND_IDS) ? $BRAND_IDS[array_rand($BRAND_IDS)] : null;
     }
 
-    // This is where you would get your list of products to process.
-    // For now, we are using a dummy data generator.
-    $products_to_process = get_dummy_product_list_from_generator();
+    return $products_data;
+}
 
+function run_product_import() {
+    load_category_and_brand_ids();
+    $active_apis = get_active_apis();
+    if (empty($active_apis)) { return; }
+
+    $products_to_process = get_dummy_product_list_from_generator();
     echo "Found " . count($products_to_process) . " products to process...\n";
 
     $added_count = 0;
@@ -173,25 +190,10 @@ function run_product_import() {
             echo "  -> FAILED & SKIPPED: Could not fetch an image for '{$product['title']}' from any active API.\n";
         }
     }
-
     echo "---------------------------------------------------\n";
     echo "Summary: Added {$added_count} new products.\n";
 }
 
-// Dummy function to generate products. Replace this with your actual product source.
-function get_dummy_product_list_from_generator() {
-    // This function can be expanded to read from a CSV, another API, etc.
-    return [
-        ['title' => 'High-Performance Gaming Laptop', 'keywords' => 'gaming laptop', 'description' => 'A powerful laptop for all your gaming needs.', 'price' => 1499.99, 'category_id' => 1, 'brand_id' => 1, 'rating' => 4.8, 'discount' => 15],
-        ['title' => 'Comfortable Running Shoes', 'keywords' => 'running shoes', 'description' => 'Lightweight and durable shoes for your daily run.', 'price' => 89.99, 'category_id' => 2, 'brand_id' => 2, 'rating' => 4.5, 'discount' => 10],
-        ['title' => 'Automatic Espresso Machine', 'keywords' => 'coffee machine', 'description' => 'Brew perfect espresso shots at home with this easy-to-use machine.', 'price' => 299.50, 'category_id' => 3, 'brand_id' => 3, 'rating' => 4.9, 'discount' => 20],
-        ['title' => 'Eco-Friendly Yoga Mat', 'keywords' => 'yoga mat', 'description' => 'A non-slip, eco-friendly mat for your yoga practice.', 'price' => 45.00, 'category_id' => 4, 'brand_id' => 4, 'rating' => 4.7, 'discount' => 5],
-        ['title' => 'Luxury Leather Designer Handbag', 'keywords' => 'leather handbag', 'description' => 'A stylish and elegant handbag for any occasion.', 'price' => 350.00, 'category_id' => 5, 'brand_id' => 5, 'rating' => 4.6, 'discount' => 25],
-    ];
-}
-
-
-// --- RUN THE JOB ---
 run_product_import();
 
 echo "---------------------------------------------------\n";
