@@ -158,4 +158,8 @@ function log_admin_activity($action, $target_type = null, $target_id = null) {
         error_log('Failed to log admin activity: ' . $e->getMessage());
     }
 }
+// Add this function at the end of functions.php
+function is_user_logged_in() {
+    return isset($_SESSION['user_id']);
+}
 ?>

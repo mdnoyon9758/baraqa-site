@@ -9,81 +9,102 @@ $current_uri = $_SERVER['REQUEST_URI'];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo isset($page_title) ? e($page_title) . ' - ' : ''; ?><?php echo e($SITE_SETTINGS['site_name'] ?? 'AI Affiliate Hub'); ?></title>
     
+    <!-- CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- CHANGED: Removed /bs/ from path -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css"/>
     <link rel="stylesheet" href="/public/css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    
+    <!-- JS (jQuery is needed for Slick Carousel) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-<div class="menu-overlay"></div> <!-- Overlay for mobile menu -->
-<header class="site-header sticky-top">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <!-- CHANGED: Removed /bs/ from path -->
-            <a class="navbar-brand" href="/"><?php echo e($SITE_SETTINGS['site_name']); ?></a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-nav" aria-controls="main-nav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="main-nav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <!-- CHANGED: Corrected active state check and removed /bs/ -->
-                        <a class="nav-link <?php echo ($current_uri == '/' || $current_uri == '/index.php') ? 'active' : ''; ?>" href="/">Home</a>
-                    </li>
 
+<header class="site-header-amazon sticky-top">
+    <!-- Top Bar -->
+    <div class="top-bar py-1">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="top-bar-links">
+                <a href="#hot-deals" class="top-link">Today's Deals</a>
+                <a href="/page/customer-service" class="top-link">Customer Service</a>
+            </div>
+            <div class="top-bar-account">
+    <a href="/wishlist" class="top-link position-relative">
+        <i class="fas fa-heart me-1"></i> Wishlist
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="wishlist-count" style="font-size: 0.6em;">
+            <?php echo $wishlist_count; ?>
+        </span>
+    </a>
+
+    <?php if (is_user_logged_in()): ?>
+        <div class="dropdown">
+            <a href="#" class="top-link dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="fas fa-user-circle me-1"></i> <?php echo e($_SESSION['user_name']); ?>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="/user/dashboard.php">My Account</a></li>
+                <li><a class="dropdown-item" href="/user/orders.php">My Orders</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="/auth/logout.php">Logout</a></li>
+            </ul>
+        </div>
+    <?php else: ?>
+        <a href="/auth/login.php" class="top-link">Login / Register</a>
+    <?php endif; ?>
+</div>
+        </div>
+    </div>
+
+    <!-- Main Navigation -->
+    <nav class="main-nav-bar navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand me-4" href="/"><?php echo e($SITE_SETTINGS['site_name']); ?></a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-nav-content" aria-controls="main-nav-content" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <div class="collapse navbar-collapse" id="main-nav-content">
+                <!-- Amazon-style Search Bar -->
+                <form action="/search" method="GET" class="w-100 mx-lg-4 my-2 my-lg-0 search-form-amazon position-relative">
+                    <div class="input-group">
+                        <button class="btn btn-outline-secondary dropdown-toggle search-dropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">All</button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">All Categories</a></li>
+                            <?php foreach ($nav_categories_for_header as $cat): ?>
+                            <li><a class="dropdown-item" href="#"><?php echo e($cat['name']); ?></a></li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <input type="text" class="form-control" id="live-search-box" name="q" placeholder="Search for products..." aria-label="Search" autocomplete="off">
+                        <button class="btn btn-primary search-button" type="submit"><i class="fas fa-search"></i></button>
+                    </div>
+                    <div id="live-search-results" class="position-absolute top-100 start-0 w-100 list-group shadow" style="z-index: 1050; display: none;"></div>
+                </form>
+
+                <!-- Navigation Links (for mobile view primarily) -->
+                <ul class="navbar-nav ms-auto d-lg-none">
                     <?php foreach ($nav_categories_for_header as $main_cat): ?>
-                        <?php 
-                            $has_sub_categories = !empty($nav_sub_categories[$main_cat['id']]);
-                            // CHANGED: Removed /bs/ from path
-                            $category_url = "/category/" . e($main_cat['slug']);
-                        ?>
-                        <li class="nav-item <?php echo $has_sub_categories ? 'dropdown' : ''; ?>">
-                            <a class="nav-link <?php echo $has_sub_categories ? 'dropdown-toggle' : ''; ?> <?php echo (strpos($current_uri, $category_url) !== false) ? 'active' : ''; ?>" href="<?php echo $category_url; ?>" <?php if ($has_sub_categories): ?> id="navbarDropdown-<?php echo e($main_cat['id']); ?>" role="button" data-bs-toggle="dropdown" aria-expanded="false" <?php endif; ?>>
-                                <?php echo e($main_cat['name']); ?>
-                            </a>
-                            <?php if ($has_sub_categories): ?>
-                                <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdown-<?php echo e($main_cat['id']); ?>">
-                                    <li><a class="dropdown-item fw-bold" href="<?php echo $category_url; ?>">All <?php echo e($main_cat['name']); ?></a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <?php foreach ($nav_sub_categories[$main_cat['id']] as $sub_cat): ?>
-                                        <!-- CHANGED: Removed /bs/ from path -->
-                                        <li><a class="dropdown-item" href="/category/<?php echo e($sub_cat['slug']); ?>"><?php echo e($sub_cat['name']); ?></a></li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            <?php endif; ?>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="/category/<?php echo e($main_cat['slug']); ?>"><?php echo e($main_cat['name']); ?></a></li>
                     <?php endforeach; ?>
-                    
-                    <?php if (!empty($nav_pages)): ?>
-                        <li class="nav-item dropdown">
-                             <a class="nav-link dropdown-toggle" href="#" id="pagesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">More</a>
-                            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="pagesDropdown">
-                                <?php foreach ($nav_pages as $nav_page): ?>
-                                    <!-- CHANGED: Removed /bs/ from path -->
-                                    <?php $page_url = "/page/" . e($nav_page['slug']); ?>
-                                    <li><a class="dropdown-item <?php echo ($current_uri == $page_url) ? 'active' : ''; ?>" href="<?php echo $page_url; ?>"><?php echo e($nav_page['title']); ?></a></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </li>
-                    <?php endif; ?>
                 </ul>
-                <div class="d-flex align-items-center ms-lg-3">
-                    <!-- CHANGED: Removed /bs/ from form action -->
-                    <form action="/search" method="GET" class="d-flex me-3 position-relative search-container" role="search">
-                        <input class="form-control me-2 bg-dark text-white border-secondary" type="search" id="live-search-box" name="q" placeholder="Search..." aria-label="Search" autocomplete="off">
-                        <div id="live-search-results" class="position-absolute top-100 start-0 w-100 list-group shadow" style="z-index: 1050; display: none;"></div>
-                    </form>
-                    <!-- CHANGED: Removed /bs/ from path -->
-                    <a href="/wishlist" class="text-white position-relative me-3" aria-label="Wishlist"><i class="fas fa-heart fa-lg"></i><span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="wishlist-count"><?php echo $wishlist_count; ?></span></a>
-                    <a href="#contact" class="btn btn-primary cta-button d-none d-lg-inline-block">Get Started</a>
-                </div>
             </div>
         </div>
     </nav>
+    
+    <!-- Sub Navigation (Desktop only) -->
+    <div class="sub-nav-bar d-none d-lg-block py-2">
+        <div class="container">
+             <ul class="nav">
+                <?php foreach ($nav_categories_for_header as $main_cat): ?>
+                    <li class="nav-item"><a class="nav-link sub-nav-link" href="/category/<?php echo e($main_cat['slug']); ?>"><?php echo e($main_cat['name']); ?></a></li>
+                <?php endforeach; ?>
+             </ul>
+        </div>
+    </div>
 </header>
 <main class="main-content">
