@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once '../includes/app.php';
 // আপনার প্রজেক্টের পাথ অনুযায়ী সঠিক ফাইল include করুন
 require_once '../includes/db_connect.php'; 
 require_once '../includes/header.php'; 
