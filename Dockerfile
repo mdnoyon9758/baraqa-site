@@ -1,7 +1,7 @@
-# Start with the official PHP 8.2 image that includes Apache
+# Use the official PHP 8.2 image with Apache
 FROM php:8.2-apache
 
-# --- 1. System Dependencies ---
+# Install system dependencies for PHP extensions
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
@@ -12,25 +12,21 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd pdo pdo_pgsql
 
-# --- 2. Apache Configuration ---
-# Enable mod_rewrite module
+# Enable the rewrite module in Apache
 RUN a2enmod rewrite
 
-# CRITICAL FIX: Copy our custom Apache config file to enable .htaccess
-# This is a more reliable method than using 'sed'.
-COPY apache-config.conf /etc/apache2/conf-available/override.conf
-RUN a2enconf override
+# CRITICAL STEP: Replace the default Apache site configuration with our custom one.
+# This makes our rewrite rules and security settings active.
+COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
 
-# --- 3. Application Setup ---
+# Set the working directory
 WORKDIR /var/www/html
+
+# Copy application files
 COPY . .
 
-# --- 4. Create Necessary Directories ---
-RUN mkdir -p public/images \
-    && mkdir -p public/fonts \
-    && mkdir -p jobs/logs
+# Create directories for writable content
+RUN mkdir -p public/images public/fonts jobs/logs
 
-# --- 5. Set Permissions ---
-RUN chown -R www-data:www-data /var/www/html/public/images \
-    && chown -R www-data:www-data /var/www/html/public/fonts \
-    && chown -R www-data:www-data /var/www/html/jobs/logs
+# Set correct permissions for the Apache user
+RUN chown -R www-data:www-data /var/www/html
