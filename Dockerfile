@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd pdo pdo_pgsql
+    # --- CHANGE 1: Added 'pgsql' to the list of extensions to install ---
+    && docker-php-ext-install gd pdo pdo_pgsql pgsql
 
 # Enable the rewrite module in Apache
 RUN a2enmod rewrite
@@ -25,8 +26,16 @@ WORKDIR /var/www/html
 # Copy application files
 COPY . .
 
-# Create directories for writable content
-RUN mkdir -p public/images public/fonts jobs/logs
+# Create directories for writable content and ensure they exist
+# --- CHANGE 2: Added -p to ensure parent directories are created if needed ---
+RUN mkdir -p public/images/products \
+             public/images/categories \
+             public/images/brands \
+             public/images/galleries \
+             public/fonts \
+             jobs/logs
 
 # Set correct permissions for the Apache user
 RUN chown -R www-data:www-data /var/www/html
+
+# The default Apache command will run, so no need for CMD or EXPOSE

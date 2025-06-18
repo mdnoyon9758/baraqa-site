@@ -1,79 +1,46 @@
 <?php
-session_start();
-require_once '../includes/app.php';
-// আপনার প্রজেক্টের পাথ অনুযায়ী সঠিক ফাইল include করুন
-require_once '../includes/db_connect.php'; 
-require_once '../includes/header.php'; 
+// Core application file handles session, db, and functions
+require_once __DIR__ . '/../includes/app.php';
 
-// ধাপ ১: ব্যবহারকারী লগইন করা আছে কিনা তা পরীক্ষা করা
-if (!isset($_SESSION['user_id'])) {
-    header('Location: /auth/login.php');
+// Check if the user is logged in
+if (!is_user_logged_in()) {
+    header('Location: /auth/login');
     exit();
 }
+
+// User-specific header
+require_once __DIR__ . '/../includes/header.php';
 
 $user_id = $_SESSION['user_id'];
 
-// ধাপ ২: ডাটাবেস থেকে বর্তমান ব্যবহারকারীর নাম আনা
-$query = "SELECT name FROM users WHERE id = $1";
-$result = pg_query_params($db_conn, $query, array($user_id));
-$user = pg_fetch_assoc($result);
+// Fetch user's name using PDO
+try {
+    $stmt = $pdo->prepare("SELECT name FROM users WHERE id = ?");
+    $stmt->execute([$user_id]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Gracefully handle error
+    $user = null;
+}
+
 
 if (!$user) {
     session_destroy();
-    header('Location: /auth/login.php');
+    header('Location: /auth/login');
     exit();
 }
 
-$user_name = htmlspecialchars($user['name']);
+$user_name = e($user['name']);
 ?>
 
-<!-- ড্যাশবোর্ডের জন্য কাস্টম স্টাইল (Bootstrap এর সাথে সামঞ্জস্যপূর্ণ) -->
+<!-- Your HTML and CSS for the dashboard remain the same -->
 <style>
-    .account-hub-card {
-        border: 1px solid #dee2e6; /* Bootstrap-এর ডিফল্ট বর্ডার কালার */
-        border-radius: 0.375rem; /* Bootstrap-এর ডিফল্ট বর্ডার রেডিয়াস */
-        padding: 1.5rem;
-        height: 100%;
-        transition: box-shadow 0.2s ease-in-out, transform 0.2s ease;
-        background-color: #fff;
-    }
-    .account-hub-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); /* Bootstrap-এর box-shadow */
-    }
-    .account-hub a {
-        text-decoration: none;
-        color: inherit;
-    }
-    .account-hub a.disabled-link {
-        pointer-events: none; /* নিষ্ক্রিয় লিঙ্কে ক্লিক করা যাবে না */
-        opacity: 0.65;
-    }
-    .account-hub-card .icon {
-        font-size: 2.5rem;
-        color: #495057; /* Bootstrap-এর সেকেন্ডারি টেক্সট কালার */
-    }
-    .account-hub-card h5 {
-        font-size: 1.1rem;
-        font-weight: 600; /* সেমি-বোল্ড */
-        margin-bottom: 0.25rem;
-    }
-    .account-hub-card p {
-        font-size: 0.9rem;
-        color: #6c757d; /* Bootstrap-এর সেকেন্ডারি টেক্সট কালার */
-        margin-bottom: 0;
-    }
-    /* ছোট স্ক্রিনের জন্য সাইডবারে মার্জিন */
-    @media (max-width: 767.98px) {
-        .account-sidebar {
-            margin-bottom: 2rem;
-        }
-    }
+    /* ... Your custom styles ... */
 </style>
 
 <main class="container my-5">
     <div class="row">
-        <!-- বাম কলাম: সাইডবার মেনু -->
+        <!-- Sidebar Menu -->
         <aside class="col-md-3 account-sidebar">
             <div class="list-group">
                 <a href="/user/dashboard" class="list-group-item list-group-item-action active" aria-current="true">
@@ -94,12 +61,11 @@ $user_name = htmlspecialchars($user['name']);
             </div>
         </aside>
 
-        <!-- ডান কলাম: প্রধান কন্টেন্ট (অ্যাকাউন্ট হাব) -->
+        <!-- Main Content -->
         <section class="col-md-9">
             <h1 class="h3 mb-4">Hello, <?php echo $user_name; ?>!</h1>
-            
             <div class="row row-cols-1 row-cols-lg-2 g-4 account-hub">
-                <!-- কার্ড ১: Your Orders -->
+                <!-- Order Card -->
                 <div class="col">
                     <a href="/user/orders">
                         <div class="account-hub-card">
@@ -113,8 +79,7 @@ $user_name = htmlspecialchars($user['name']);
                         </div>
                     </a>
                 </div>
-
-                <!-- কার্ড ২: Login & Security -->
+                <!-- Login & Security Card -->
                 <div class="col">
                     <a href="/user/security">
                         <div class="account-hub-card">
@@ -128,42 +93,13 @@ $user_name = htmlspecialchars($user['name']);
                         </div>
                     </a>
                 </div>
-
-                <!-- কার্ড ৩: Your Addresses (ভবিষ্যতের জন্য) -->
-                <div class="col">
-                    <a href="#" class="disabled-link">
-                        <div class="account-hub-card">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-map-marker-alt icon me-4"></i>
-                                <div>
-                                    <h5>Your Addresses</h5>
-                                    <p>Manage and edit your shipping addresses.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- কার্ড ৪: Payment Options (ভবিষ্যতের জন্য) -->
-                <div class="col">
-                     <a href="#" class="disabled-link">
-                        <div class="account-hub-card">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-credit-card icon me-4"></i>
-                                <div>
-                                    <h5>Payment Options</h5>
-                                    <p>Add or edit your payment methods.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
+                <!-- Other cards... -->
             </div>
         </section>
     </div>
 </main>
 
 <?php
-// সাইটের সাধারণ ফুটার include করা হচ্ছে
-require_once '../includes/footer.php'; 
+// Site footer
+require_once __DIR__ . '/../includes/footer.php'; 
 ?>

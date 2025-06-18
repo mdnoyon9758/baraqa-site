@@ -1,27 +1,23 @@
 <?php
-session_start();
-require_once '../includes/app.php';
-// আপনার প্রজেক্টের পাথ অনুযায়ী সঠিক ফাইল include করুন
-require_once '../includes/db_connect.php'; 
+// Core application file is loaded first to handle sessions, db connection, and functions
+require_once __DIR__ . '/../includes/app.php';
 
-// অ্যাডমিন লগইন করা আছে কিনা এবং তার পারমিশন আছে কিনা, সেই চেক এখানে যোগ করতে হবে
-// উদাহরণস্বরূপ:
-/*
-if (!isset($_SESSION['admin_id'])) {
-    header('Location: /admin/login.php');
-    exit();
-}
-*/
+// Check if the admin is logged in. Use the function from your functions.php
+require_login(); // This function should handle redirecting if not logged in.
 
-// অ্যাডমিন প্যানেলের হেডার include করা হচ্ছে
+// The admin header should be included after the core app and authentication check.
 require_once 'includes/admin_header.php';
 
-// ডাটাবেস থেকে সকল ব্যবহারকারীর তথ্য আনা হচ্ছে
-// created_at কলামটি users টেবিলে আছে বলে ধরে নেওয়া হচ্ছে
-$query = "SELECT id, name, email, created_at, status FROM users ORDER BY created_at DESC";
-$result = pg_query($db_conn, $query);
-$users = pg_fetch_all($result);
-
+// Fetch all users from the database
+// Note: We use $pdo from db_connect.php which is loaded by app.php
+try {
+    $stmt = $pdo->query("SELECT id, name, email, created_at, status FROM users ORDER BY created_at DESC");
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Handle database errors gracefully
+    $users = [];
+    set_flash_message('Error fetching users: ' . $e->getMessage(), 'danger');
+}
 ?>
 
 <div class="container-fluid px-4">
@@ -37,8 +33,6 @@ $users = pg_fetch_all($result);
             All Registered Users
         </div>
         <div class="card-body">
-            <!-- ডেটাটেবিল (DataTables) ব্যবহার করলে সার্চ, সর্টিং এবং প্যাজিনেশন স্বয়ংক্রিয়ভাবে যোগ হবে -->
-            <!-- ডেটাটেবিল চালু করার জন্য টেবিলকে একটি আইডি দিন, যেমন id="usersTable" -->
             <div class="table-responsive">
                 <table class="table table-bordered table-striped table-hover" id="usersTable">
                     <thead class="table-dark">
@@ -56,8 +50,8 @@ $users = pg_fetch_all($result);
                             <?php foreach ($users as $user): ?>
                                 <tr>
                                     <td><?php echo $user['id']; ?></td>
-                                    <td><?php echo htmlspecialchars($user['name']); ?></td>
-                                    <td><?php echo htmlspecialchars($user['email']); ?></td>
+                                    <td><?php echo e($user['name']); ?></td>
+                                    <td><?php echo e($user['email']); ?></td>
                                     <td><?php echo date('d M, Y H:i', strtotime($user['created_at'])); ?></td>
                                     <td>
                                         <?php if (isset($user['status']) && $user['status'] === 'suspended'): ?>
@@ -98,18 +92,6 @@ $users = pg_fetch_all($result);
 </div>
 
 <?php
-// অ্যাডমিন প্যানেলের ফুটার include করা হচ্ছে
+// Admin footer
 require_once 'includes/admin_footer.php'; 
 ?>
-
-<!-- DataTables JS (যদি আপনার টেমপ্লেটে না থাকে) -->
-<!-- আপনার admin_footer.php-তে এই স্ক্রিপ্টগুলো যোগ করতে পারেন -->
-<script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest" crossorigin="anonymous"></script>
-<script>
-    window.addEventListener('DOMContentLoaded', event => {
-        const usersTable = document.getElementById('usersTable');
-        if (usersTable) {
-            new simpleDatatables.DataTable(usersTable);
-        }
-    });
-</script>

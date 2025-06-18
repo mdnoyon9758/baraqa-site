@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../includes/app.php';
+require_once __DIR__ . '/../includes/app.php';
 // আপনার প্রজেক্টের পাথ অনুযায়ী সঠিক ফাইল include করুন
 require_once '../includes/db_connect.php'; 
 require_once '../includes/functions.php'; // display_flash_messages() ফাংশনের জন্য
