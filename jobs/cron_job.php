@@ -11,10 +11,6 @@ require_once __DIR__ . '/../config.php';
 echo "Cron Job Started at " . date('Y-m-d H:i:s') . "\n";
 echo "---------------------------------------------------\n";
 
-// --- Global variables for storing fetched IDs ---
-$CATEGORY_IDS = [];
-$BRAND_IDS = [];
-
 function get_active_apis() {
     global $pdo;
     try {
@@ -130,45 +126,44 @@ function save_product_to_db($product_data, $image_url) {
     }
 }
 
-function load_category_and_brand_ids() {
-    global $pdo, $CATEGORY_IDS, $BRAND_IDS;
-    try {
-        $CATEGORY_IDS = $pdo->query("SELECT id FROM categories")->fetchAll(PDO::FETCH_COLUMN);
-        $BRAND_IDS = $pdo->query("SELECT id FROM brands")->fetchAll(PDO::FETCH_COLUMN);
+function get_or_create_term_id($name, $table_name) {
+    global $pdo;
+    if (empty(trim($name))) { return null; }
 
-        if (empty($CATEGORY_IDS)) {
-            echo "Warning: No categories found in the database. Products cannot be assigned to a category.\n";
-        }
-        if (empty($BRAND_IDS)) {
-            echo "Warning: No brands found in the database. Products cannot be assigned to a brand.\n";
-        }
+    $stmt_check = $pdo->prepare("SELECT id FROM {$table_name} WHERE name = :name");
+    $stmt_check->execute([':name' => $name]);
+    $existing = $stmt_check->fetch();
+
+    if ($existing) {
+        return $existing['id'];
+    }
+
+    try {
+        $slug = slugify($name);
+        $sql = "INSERT INTO {$table_name} (name, slug) VALUES (:name, :slug)";
+        $stmt_insert = $pdo->prepare($sql);
+        $stmt_insert->execute([':name' => $name, 'slug' => $slug]);
+        $new_id = $pdo->lastInsertId();
+        echo "  - CREATED new {$table_name}: '{$name}' (ID: {$new_id})\n";
+        return $new_id;
     } catch (PDOException $e) {
-        echo "DB Error loading category/brand IDs: " . $e->getMessage() . "\n";
+        echo "  - DB_ERROR: Could not create {$table_name} '{$name}'. " . $e->getMessage() . "\n";
+        return null;
     }
 }
 
 function get_dummy_product_list_from_generator() {
-    global $CATEGORY_IDS, $BRAND_IDS;
-    $timestamp = time(); // Add a timestamp to make titles unique
-
-    $products_data = [
-        ['title' => 'Gaming Laptop ' . substr($timestamp, -4), 'keywords' => 'gaming laptop', 'description' => 'A powerful laptop for all your gaming needs.', 'price' => 1499.99, 'rating' => 4.8, 'discount' => 15],
-        ['title' => 'Running Shoes ' . substr($timestamp, -4), 'keywords' => 'running shoes', 'description' => 'Lightweight and durable shoes for your daily run.', 'price' => 89.99, 'rating' => 4.5, 'discount' => 10],
-        ['title' => 'Espresso Machine ' . substr($timestamp, -4), 'keywords' => 'coffee machine', 'description' => 'Brew perfect espresso shots at home.', 'price' => 299.50, 'rating' => 4.9, 'discount' => 20],
-        ['title' => 'Eco-Friendly Yoga Mat ' . substr($timestamp, -4), 'keywords' => 'yoga mat', 'description' => 'A non-slip, eco-friendly mat.', 'price' => 45.00, 'rating' => 4.7, 'discount' => 5],
-        ['title' => 'Designer Handbag ' . substr($timestamp, -4), 'keywords' => 'leather handbag', 'description' => 'A stylish and elegant handbag.', 'price' => 350.00, 'rating' => 4.6, 'discount' => 25],
+    $timestamp = time(); 
+    return [
+        ['title' => 'Gaming Laptop ' . substr($timestamp, -4), 'keywords' => 'gaming laptop', 'description' => 'A powerful laptop for all your gaming needs.', 'price' => 1499.99, 'rating' => 4.8, 'discount' => 15, 'category_name' => 'Electronics', 'brand_name' => 'TechMaster'],
+        ['title' => 'Running Shoes ' . substr($timestamp, -4), 'keywords' => 'running shoes', 'description' => 'Lightweight and durable shoes.', 'price' => 89.99, 'rating' => 4.5, 'discount' => 10, 'category_name' => 'Fashion', 'brand_name' => 'SpeedFlex'],
+        ['title' => 'Espresso Machine ' . substr($timestamp, -4), 'keywords' => 'coffee machine', 'description' => 'Brew perfect espresso shots.', 'price' => 299.50, 'rating' => 4.9, 'discount' => 20, 'category_name' => 'Home & Kitchen', 'brand_name' => 'BrewRight'],
+        ['title' => 'Eco-Friendly Yoga Mat ' . substr($timestamp, -4), 'keywords' => 'yoga mat', 'description' => 'A non-slip, eco-friendly mat.', 'price' => 45.00, 'rating' => 4.7, 'discount' => 5, 'category_name' => 'Sports & Outdoors', 'brand_name' => 'ZenFlow'],
+        ['title' => 'Designer Handbag ' . substr($timestamp, -4), 'keywords' => 'leather handbag', 'description' => 'A stylish and elegant handbag.', 'price' => 350.00, 'rating' => 4.6, 'discount' => 25, 'category_name' => 'Fashion', 'brand_name' => 'VogueStitch'],
     ];
-
-    foreach ($products_data as &$product) {
-        $product['category_id'] = !empty($CATEGORY_IDS) ? $CATEGORY_IDS[array_rand($CATEGORY_IDS)] : null;
-        $product['brand_id'] = !empty($BRAND_IDS) ? $BRAND_IDS[array_rand($BRAND_IDS)] : null;
-    }
-
-    return $products_data;
 }
 
 function run_product_import() {
-    load_category_and_brand_ids();
     $active_apis = get_active_apis();
     if (empty($active_apis)) { return; }
 
@@ -176,19 +171,22 @@ function run_product_import() {
     echo "Found " . count($products_to_process) . " products to process...\n";
 
     $added_count = 0;
-    foreach ($products_to_process as $product) {
+    foreach ($products_to_process as $product_info) {
         echo "---------------------------------------------------\n";
-        echo "Processing: " . $product['title'] . "\n";
+        echo "Processing: " . $product_info['title'] . "\n";
         
-        $image_url = fetch_image_from_api($product['keywords'], $active_apis);
+        $image_url = fetch_image_from_api($product_info['keywords'], $active_apis);
 
         if ($image_url) {
-            if (save_product_to_db($product, $image_url)) {
+            $product_info['category_id'] = get_or_create_term_id($product_info['category_name'], 'categories');
+            $product_info['brand_id'] = get_or_create_term_id($product_info['brand_name'], 'brands');
+
+            if (save_product_to_db($product_info, $image_url)) {
                 $added_count++;
-                echo "  -> SUCCESS: Product '{$product['title']}' was added to the database.\n";
+                echo "  -> SUCCESS: Product '{$product_info['title']}' was added to the database.\n";
             }
         } else {
-            echo "  -> FAILED & SKIPPED: Could not fetch an image for '{$product['title']}' from any active API.\n";
+            echo "  -> FAILED & SKIPPED: Could not fetch an image for '{$product_info['title']}' from any active API.\n";
         }
     }
     echo "---------------------------------------------------\n";
