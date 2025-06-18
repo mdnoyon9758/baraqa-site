@@ -7,20 +7,24 @@ if (!empty($search_query)) {
     $page_title .= ' for "' . e($search_query) . '"';
 }
 
-// Initialize all variables to prevent errors
-$products = []; $total_products = 0; $available_brands = []; $total_pages = 0;
-$global_min_price = 0; $global_max_price = 5000;
+// --- Initialize all filter variables to safe defaults ---
+$products = [];
+$total_products = 0;
+$total_pages = 0;
+$available_brands = [];
+$global_min_price = 0;
+$global_max_price = 5000;
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $brands_filter = isset($_GET['brands']) && is_array($_GET['brands']) ? $_GET['brands'] : [];
 $price_range = isset($_GET['price']) ? explode('-', $_GET['price']) : [];
 $min_price = !empty($price_range[0]) ? (float)$price_range[0] : null;
 $max_price = !empty($price_range[1]) ? (float)$price_range[1] : null;
 $min_rating = isset($_GET['min_rating']) ? (float)$_GET['min_rating'] : 0;
 $sort_key = $_GET['sort'] ?? 'relevance';
-$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 
 try {
+    // --- PART 1: Get Filter Options (Brands & Price) based on the initial search query ONLY ---
     if (!empty($search_query)) {
-        // PART 1: Get Filter Options based on the initial search
         $filter_base_sql = "FROM products p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN brands b ON p.brand_id = b.id WHERE p.is_published = 1 AND (p.title LIKE ? OR p.description LIKE ? OR c.name LIKE ? OR b.name LIKE ?)";
         $filter_params = array_fill(0, 4, '%' . $search_query . '%');
 
@@ -35,12 +39,12 @@ try {
         $global_max_price = ceil($price_limits['max_p'] ?? 5000);
     }
     
-    // PART 2: Build the MAIN query with ALL filters applied
+    // --- PART 2: Build the MAIN query with ALL filters applied ---
     $main_params = [];
     $where_clauses = ["p.is_published = 1"];
     if (!empty($search_query)) {
-        $where_clauses[] = "(p.title LIKE ? OR p.description LIKE ? OR c.name LIKE ? OR b.name LIKE ?)";
-        array_push($main_params, ...array_fill(0, 4, '%' . $search_query . '%'));
+        $where_clauses[] = "(p.title LIKE ? OR p.description LIKE ?)";
+        array_push($main_params, '%' . $search_query . '%', '%' . $search_query . '%');
     }
     if (!empty($brands_filter)) {
         $where_clauses[] = "p.brand_id IN (" . implode(',', array_fill(0, count($brands_filter), '?')) . ")";
@@ -51,30 +55,38 @@ try {
     if ($min_rating > 0) { $where_clauses[] = "p.rating >= ?"; $main_params[] = $min_rating; }
     
     $sql_where = " WHERE " . implode(" AND ", $where_clauses);
-    $sql_base = "FROM products p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN brands b ON p.brand_id = b.id";
+    $sql_base = "FROM products p";
 
-    // PART 3: Execute query for count and paginated results
+    // --- PART 3: Execute query for product count and paginated results ---
     $sort_options = ['relevance' => 'p.trend_score DESC', 'price_asc' => 'p.price ASC', 'price_desc' => 'p.price DESC', 'rating' => 'p.rating DESC'];
+    // CRITICAL FIX: Ensure the order by clause is safe and not from user input directly
     $order_by_sql = $sort_options[$sort_key] ?? $sort_options['relevance'];
+    
     $products_per_page = (int)($SITE_SETTINGS['products_per_page'] ?? 16);
     $offset = ($page - 1) * $products_per_page;
 
-    $count_sql = "SELECT COUNT(DISTINCT p.id) " . $sql_base . $sql_where;
+    $count_sql = "SELECT COUNT(p.id) " . $sql_base . $sql_where;
     $count_stmt = $pdo->prepare($count_sql);
     $count_stmt->execute($main_params);
     $total_products = $count_stmt->fetchColumn();
     $total_pages = ceil($total_products / $products_per_page);
 
     if ($total_products > 0 && !empty($search_query)) {
-        $product_sql = "SELECT DISTINCT p.* " . $sql_base . $sql_where . " ORDER BY $order_by_sql LIMIT ? OFFSET ?";
+        $product_sql = "SELECT p.* " . $sql_base . $sql_where . " ORDER BY " . $order_by_sql . " LIMIT ? OFFSET ?";
         $product_params = array_merge($main_params, [$products_per_page, $offset]);
         $product_stmt = $pdo->prepare($product_sql);
-        for ($i = 0; $i < count($product_params); $i++) { $product_stmt->bindValue($i + 1, $product_params[$i]); }
+        for ($i = 0; $i < count($product_params); $i++) { 
+            $product_stmt->bindValue($i + 1, $product_params[$i]); 
+        }
         $product_stmt->execute();
         $products = $product_stmt->fetchAll();
     }
 
-} catch (PDOException $e) { /* Error handling ... */ }
+} catch (PDOException $e) {
+    // Graceful error handling
+    $_SESSION['error_message'] = "A search error occurred. Please try again.";
+    error_log('Search page error: ' . $e->getMessage());
+}
 
 require_once __DIR__ . '/includes/header.php';
 ?>
@@ -92,7 +104,6 @@ require_once __DIR__ . '/includes/header.php';
         <aside class="col-lg-3">
             <div class="filter-sidebar p-3 rounded bg-light shadow-sm">
                 <h4 class="mb-3">Refine Results</h4>
-                <!-- PATH FIX: Form action is root-relative -->
                 <form method="GET" id="filter-form" action="/search">
                     <input type="hidden" name="q" value="<?php echo e($search_query); ?>">
                     <?php if(!empty($available_brands)): ?>
@@ -126,7 +137,19 @@ require_once __DIR__ . '/includes/header.php';
              <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-white rounded shadow-sm">
                  <div class="fw-bold text-muted"><?php echo $total_products; ?> products found.</div>
                  <form method="GET" id="sort-form" action="/search">
-                    <?php $hidden_params = $_GET; unset($hidden_params['sort']); foreach($hidden_params as $key => $value) { if(is_array($value)) { foreach($value as $sub_value) echo '<input type="hidden" name="' . e($key) . '[]" value="' . e($sub_value) . '">'; } else { echo '<input type="hidden" name="' . e($key) . '" value="' . e($value) . '">'; } } ?>
+                    <?php 
+                        // CRITICAL FIX: Keep all other filter parameters when sorting
+                        foreach ($_GET as $key => $value) { 
+                            if ($key == 'sort') continue;
+                            if (is_array($value)) { 
+                                foreach ($value as $sub_value) {
+                                    echo '<input type="hidden" name="' . e($key) . '[]" value="' . e($sub_value) . '">';
+                                }
+                            } else { 
+                                echo '<input type="hidden" name="' . e($key) . '" value="' . e($value) . '">';
+                            } 
+                        } 
+                    ?>
                     <label for="sort" class="form-label me-2 mb-0">Sort by:</label>
                     <select name="sort" id="sort" class="form-select form-select-sm" onchange="this.form.submit()">
                         <option value="relevance" <?php echo ($sort_key == 'relevance') ? 'selected' : ''; ?>>Relevance</option>
@@ -138,7 +161,7 @@ require_once __DIR__ . '/includes/header.php';
             </div>
             <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
                 <?php if (!empty($products)): foreach ($products as $product) { include __DIR__ . '/includes/_product_card.php'; }
-                elseif (!empty($search_query)): echo '<div class="col-12"><div class="alert alert-warning text-center p-5"><h4>No Products Found</h4><p>Try adjusting your filters or searching for a different keyword.</p></div></div>';
+                elseif (!empty($search_query)): echo '<div class="col-12"><div class="alert alert-warning text-center p-5"><h4>No Products Found</h4><p>Your search - <strong>' . e($search_query) . '</strong> - did not match any products. Try a different keyword or adjust your filters.</p></div></div>';
                 else: echo '<div class="col-12"><div class="alert alert-info text-center p-5"><h4>Start Searching</h4><p>Please enter a keyword in the search bar above to find products.</p></div></div>'; endif; ?>
             </div>
             <!-- Pagination -->
@@ -146,7 +169,6 @@ require_once __DIR__ . '/includes/header.php';
                 <ul class="pagination">
                     <?php if ($total_pages > 1): $query_params = $_GET;
                         for ($i = 1; $i <= $total_pages; $i++): $query_params['page'] = $i; ?>
-                        <!-- PATH FIX: Pagination links are now root-relative -->
                         <li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>"><a class="page-link" href="/search?<?php echo http_build_query($query_params); ?>"><?php echo $i; ?></a></li>
                     <?php endfor; endif; ?>
                 </ul>
@@ -160,5 +182,21 @@ require_once __DIR__ . '/includes/header.php';
 <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/wnumb/1.2.0/wNumb.min.js"></script>
 <script>
-    // JS code remains the same...
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filter-form');
+    const priceSlider = document.getElementById('price-slider');
+    if (priceSlider) {
+        noUiSlider.create(priceSlider, {
+            start: [<?php echo $min_price ?? $global_min_price; ?>, <?php echo $max_price ?? $global_max_price; ?>],
+            connect: true, range: {'min': <?php echo $global_min_price; ?>,'max': <?php echo $global_max_price; ?>},
+            format: wNumb({ decimals: 0, prefix: '$' }), step: 5, tooltips: true
+        });
+        const priceInput = document.getElementById('price-input');
+        priceSlider.noUiSlider.on('update', function(values) { priceInput.value = values.join('-').replace(/\$/g, ''); });
+        priceSlider.noUiSlider.on('change', function() { filterForm.submit(); });
+    }
+    document.querySelectorAll('.brand-checkbox, .rating-radio').forEach(input => {
+        input.addEventListener('change', function() { filterForm.submit(); });
+    });
+});
 </script>

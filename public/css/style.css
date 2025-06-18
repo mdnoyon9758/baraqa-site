@@ -1,6 +1,6 @@
 /*
 =================================
-BARAQA - Main Stylesheet
+BARAQA - Main Stylesheet (Final Version)
 =================================
 */
 
@@ -10,15 +10,16 @@ BARAQA - Main Stylesheet
     --amazon-dark-blue: #232F3E;
     --amazon-orange: #FF9900;
     --amazon-light-blue: #23A2F0;
-    --light-bg: #f8f9fa; /* Standard light background */
     --text-dark: #111;
     --text-light: #fff;
-    --text-muted: #555;
     --border-color: #ddd;
+    --light-bg: #f8f9fa;
+    --body-bg: #EAEDED;
+    --danger-red: #B12704;
 }
 
 body {
-    background-color: #EAEDED; /* Amazon-like light grey background */
+    background-color: var(--body-bg);
     font-family: 'Inter', sans-serif;
     color: var(--text-dark);
 }
@@ -31,8 +32,24 @@ a:hover {
     color: var(--amazon-orange);
 }
 
-.cursor-pointer {
-    cursor: pointer;
+.cursor-pointer { cursor: pointer; }
+
+.section-title {
+    position: relative;
+    margin-bottom: 30px;
+    font-weight: 600;
+}
+.section-title span {
+    background-color: var(--body-bg);
+    padding: 0 20px;
+    position: relative; z-index: 1;
+}
+.bg-light .section-title span { background-color: var(--light-bg); }
+.section-title:before {
+    content: ""; position: absolute;
+    top: 50%; left: 0; width: 100%;
+    height: 1px; background-color: var(--border-color);
+    z-index: 0;
 }
 
 
@@ -41,87 +58,51 @@ a:hover {
     background-color: var(--amazon-dark-blue);
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
-
 .top-bar {
     background-color: var(--amazon-blue);
     font-size: 0.85rem;
 }
 .top-link {
-    color: #ddd;
-    padding: 5px 10px;
-    border-radius: 3px;
-    transition: background-color 0.2s;
+    color: #ddd; padding: 5px 10px;
+    border-radius: 3px; transition: background-color 0.2s;
 }
-.top-link:hover {
-    color: #fff;
-    background-color: #37475a;
-}
-.top-bar-account a {
-    margin-left: 10px;
-}
-
-.main-nav-bar {
-    background-color: var(--amazon-dark-blue);
-    padding: 10px 0;
-}
-.navbar-brand {
-    color: #fff;
-    font-weight: bold;
-}
-.navbar-brand:hover {
-    color: var(--amazon-orange);
-}
-.navbar-toggler {
-    border: 1px solid #555;
-    color: #fff;
-}
-
+.top-link:hover { color: #fff; background-color: #37475a; }
+.top-bar-account a { margin-left: 10px; }
+.main-nav-bar { background-color: var(--amazon-dark-blue); padding: 10px 0; }
+.navbar-brand { color: #fff; font-weight: bold; }
+.navbar-brand:hover { color: var(--amazon-orange); }
+.navbar-toggler { border: 1px solid #555; color: #fff; }
 .search-form-amazon .form-control:focus {
     box-shadow: 0 0 0 3px #ff990060;
     border-color: var(--amazon-orange);
 }
 .search-form-amazon .search-dropdown {
-    background-color: #f3f3f3;
-    border: 1px solid #ced4da;
-    border-right: 0;
+    background-color: #f3f3f3; border: 1px solid #ced4da; border-right: 0;
 }
 .search-form-amazon .search-button {
     background-color: var(--amazon-orange);
     border-color: var(--amazon-orange);
-    color: #111;
+    color: var(--text-dark);
 }
 .search-form-amazon .search-button:hover {
-    background-color: #e68a00;
-    border-color: #e68a00;
+    background-color: #e68a00; border-color: #e68a00;
 }
-
 .sub-nav-bar {
-    background-color: #37475A;
-    font-size: 0.9rem;
+    background-color: #37475A; font-size: 0.9rem;
     border-top: 1px solid #4a5b70;
 }
-.sub-nav-link {
-    color: #fff;
-    padding: 6px 12px;
-    border-radius: 3px;
-}
-.sub-nav-link:hover {
-    outline: 1px solid #fff;
-}
+.sub-nav-link { color: #fff; padding: 6px 12px; border-radius: 3px; }
+.sub-nav-link:hover { outline: 1px solid #fff; color: #fff; }
 
 
-/* --- 3. Amazon-Inspired Homepage Sections --- */
+/* --- 3. Homepage Styles --- */
 
 /* Hero Carousel */
 .hero-section-amazon .hero-slide-item {
-    height: 60vh;
-    min-height: 400px;
-    background-size: cover;
-    background-position: center;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    height: 60vh; min-height: 450px;
+    background-size: cover; background-position: center;
+    position: relative; display: flex;
+    align-items: center; justify-content: center;
 }
 .hero-slide-overlay {
     position: absolute; top: 0; left: 0;
@@ -130,7 +111,6 @@ a:hover {
 }
 .hero-slide-item .container { position: relative; z-index: 2; }
 .hero-price { color: var(--amazon-orange); font-weight: bold; }
-.carousel-control-prev, .carousel-control-next { width: 5%; }
 
 /* Category Cards */
 .category-card-amazon-v2 {
@@ -147,23 +127,17 @@ a:hover {
     transition: transform 0.3s ease;
 }
 .category-card-amazon-v2:hover .category-card-image { transform: scale(1.05); }
-.category-card-amazon-v2 .card-body { padding: 15px; }
-.category-card-amazon-v2 .card-title { font-weight: 500; margin-bottom: 0; }
 
 /* Deal & Featured Cards */
 .deal-card-amazon, .featured-card-amazon {
     background-color: #fff; border: 1px solid var(--border-color);
-    transition: box-shadow 0.2s ease-in-out;
-}
-.deal-card-amazon:hover, .featured-card-amazon:hover {
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 .deal-img {
     width: 100px; height: 100px;
     object-fit: cover; border-radius: 4px;
 }
 .deal-price {
-    font-size: 1.5rem; font-weight: bold; color: #B12704;
+    font-size: 1.5rem; font-weight: bold; color: var(--danger-red);
 }
 
 /* Brand Carousel */
@@ -208,70 +182,66 @@ a:hover {
 .rating-stars { font-size: 0.8rem; }
 
 
-/* --- 5. Amazon-Inspired Footer --- */
-.back-to-top-btn {
-    display: block;
-    background-color: #37475A;
-    color: #fff;
-    text-align: center;
-    padding: 15px 0;
-    text-decoration: none;
-    transition: background-color 0.2s;
+/* --- 5. Product Page Styles --- */
+.product-page-amazon .breadcrumb a { color: var(--text-dark); }
+.product-gallery .main-image-container img { transition: opacity 0.3s ease; }
+.product-gallery .thumbnail-strip { display: flex; gap: 0.5rem; }
+.product-gallery .thumbnail-item {
+    cursor: pointer; opacity: 0.6;
+    border: 2px solid transparent;
+    transition: opacity 0.2s, border-color 0.2s;
 }
-.back-to-top-btn:hover {
-    background-color: #4a5b70;
-    color: #fff;
+.product-gallery .thumbnail-item:hover { opacity: 1; }
+.product-gallery .thumbnail-item.active {
+    opacity: 1; border-color: var(--amazon-orange);
 }
-
-.site-footer-amazon {
-    background-color: var(--amazon-dark-blue);
-    color: #ddd;
-    font-size: 0.9rem;
+.product-title-amazon { font-size: 1.75rem; font-weight: 500; }
+.product-price-amazon { font-size: 1.75rem; color: var(--danger-red); }
+.product-description-amazon { font-size: 0.95rem; }
+.buy-box-amazon {
+    border: 1px solid #c7c7c7;
+    border-radius: 8px;
+    background-color: #fff;
 }
-.footer-heading {
-    color: #fff;
-    font-weight: bold;
-    margin-bottom: 1rem;
+.buy-box-amazon .price-section-buybox { font-size: 1.25rem; }
+.buy-box-amazon .stock-status-amazon.in-stock { font-size: 1.1rem; color: #007600; font-weight: 600; }
+.buy-box-amazon .stock-status-amazon.out-of-stock { font-size: 1.1rem; color: var(--danger-red); font-weight: 600; }
+.buy-box-amazon .btn-primary {
+    background-color: var(--amazon-orange);
+    border-color: #a88734 #9c7e31 #846a29;
 }
-.footer-links { padding-left: 0; }
-.footer-links li { margin-bottom: 0.5rem; }
-.footer-links a { color: #ddd; }
-.footer-links a:hover { color: var(--amazon-orange); text-decoration: underline; }
-
-.footer-contact-info { color: #ddd; }
-.social-icons-footer .social-icon {
-    color: #ddd;
-    font-size: 1.2rem;
-    margin-right: 15px;
-}
-.social-icons-footer .social-icon:hover { color: #fff; }
-.footer-divider { border-color: #37475A; }
-.sub-footer { background-color: var(--amazon-blue); }
-
-
-/* --- 6. Utility and Other Page Styles --- */
-.section-title {
-    position: relative;
-    margin-bottom: 30px;
-    font-weight: 600;
-}
-.section-title span {
-    background-color: #EAEDED; /* Match body background */
-    padding: 0 20px;
-    position: relative; z-index: 1;
-}
-.bg-light .section-title span { background-color: var(--light-bg); }
-.section-title:before {
-    content: ""; position: absolute;
-    top: 50%; left: 0; width: 100%;
-    height: 1px; background-color: var(--border-color);
-    z-index: 0;
+.buy-box-amazon .btn-secondary {
+    background-color: #e7e9ec;
+    border-color: #adb1b8 #a2a6ac #8d9096;
 }
 
+
+/* --- 6. Filter & Category Page Styles --- */
 .filter-sidebar { background-color: #fff !important; }
-
-/* Rating Filter Stars */
-.rating-filter label { color: #ccc; cursor: pointer; }
+.rating-filter label { color: #ccc; cursor: pointer; transition: color 0.2s; }
 .rating-filter input:checked ~ label,
 .rating-filter label:hover,
 .rating-filter label:hover ~ label { color: var(--amazon-orange); }
+
+
+/* --- 7. Footer Styles --- */
+.back-to-top-btn {
+    display: block; background-color: #37475A;
+    color: #fff; text-align: center;
+    padding: 15px 0; transition: background-color 0.2s;
+}
+.back-to-top-btn:hover { background-color: #4a5b70; color: #fff; }
+.site-footer-amazon {
+    background-color: var(--amazon-dark-blue);
+    color: #ddd; font-size: 0.9rem;
+}
+.footer-heading { color: #fff; font-weight: bold; margin-bottom: 1rem; }
+.footer-links { padding-left: 0; list-style: none; }
+.footer-links li { margin-bottom: 0.5rem; }
+.footer-links a { color: #ddd; }
+.footer-links a:hover { color: var(--amazon-orange); text-decoration: underline; }
+.footer-contact-info { color: #ddd; }
+.social-icons-footer .social-icon { color: #ddd; font-size: 1.2rem; margin-right: 15px; }
+.social-icons-footer .social-icon:hover { color: #fff; }
+.footer-divider { border-color: #37475A; }
+.sub-footer { background-color: var(--amazon-blue); }
