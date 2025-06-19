@@ -21,10 +21,11 @@ $sql_where_conditions = [];
 $params = [];
 
 if (!empty($search_term)) {
-    $sql_where_conditions[] = "(o.id::text ILIKE :search OR o.customer_name ILIKE :search OR o.customer_email ILIKE :search)";
+    $sql_where_conditions[] = "(o.id::text ILIKE :search OR u.name ILIKE :search OR u.email ILIKE :search)";
     $params[':search'] = '%' . $search_term . '%';
 }
 if (!empty($status_filter)) {
+    // CORRECTED: The status column is in the 'orders' table, aliased as 'o'.
     $sql_where_conditions[] = "o.status = :status";
     $params[':status'] = $status_filter;
 }
@@ -32,15 +33,22 @@ if (!empty($status_filter)) {
 $where_clause = !empty($sql_where_conditions) ? ' WHERE ' . implode(' AND ', $sql_where_conditions) : '';
 
 try {
-    // Fetch total count for pagination
-    $total_orders_stmt = $pdo->prepare("SELECT COUNT(o.id) FROM orders o" . $where_clause);
+    // To build the query safely with a JOIN, we must specify which table each column comes from.
+    $count_sql = "SELECT COUNT(o.id) FROM orders o LEFT JOIN users u ON o.user_id = u.id" . $where_clause;
+    $total_orders_stmt = $pdo->prepare($count_sql);
     $total_orders_stmt->execute($params);
     $total_orders = $total_orders_stmt->fetchColumn();
     $total_pages = ceil($total_orders / $limit);
 
-    // Fetch orders for the current page
-    // CORRECTED: Changed o.order_date to o.created_at
-    $orders_sql = "SELECT o.id, o.created_at as order_date, o.customer_name, o.total_amount, o.status, u.id as user_id 
+    // CORRECTED SQL: Fetched 'status' from the 'orders' table (o.status)
+    // and customer name from the 'users' table (u.name).
+    $orders_sql = "SELECT 
+                        o.id, 
+                        o.created_at as order_date, 
+                        o.total_amount, 
+                        o.status, 
+                        u.id as user_id,
+                        u.name as customer_name
                    FROM orders o
                    LEFT JOIN users u ON o.user_id = u.id"
                    . $where_clause . 
@@ -115,7 +123,6 @@ require_once 'includes/header.php';
                         <tr>
                             <td><a href="/admin/view_order.php?id=<?php echo e($order['id']); ?>" class="fw-bold text-dark text-decoration-none">#<?php echo e($order['id']); ?></a></td>
                             <td><a href="/admin/view_user.php?id=<?php echo e($order['user_id']); ?>"><?php echo e($order['customer_name']); ?></a></td>
-                            <!-- CORRECTED: Using 'order_date' alias which now points to 'created_at' -->
                             <td><?php echo date('d M, Y', strtotime($order['order_date'])); ?></td>
                             <td>$<?php echo e(number_format($order['total_amount'], 2)); ?></td>
                             <td class="text-center">
