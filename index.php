@@ -1,142 +1,90 @@
 <?php
-// File: index.php (The Front Controller)
-
-// 1. Load the core application environment
+// Core application environment
 require_once __DIR__ . '/includes/app.php';
 
-// 2. Basic Routing Logic
-$request_uri = $_SERVER['REQUEST_URI'];
-$base_path = ''; // Since we are at the root
+// Parse the request URI to determine the route
+$request_path = strtok($_SERVER['REQUEST_URI'], '?');
+$request_path = trim($request_path, '/');
+$segments = $request_path ? explode('/', $request_path) : [];
 
-// Remove query string from URI (e.g., ?page=2)
-$request_path = strtok($request_uri, '?');
+// Determine the primary route, default to 'home'
+$main_route = $segments[0] ?? 'home';
+$slug = $segments[1] ?? null;
 
-// Remove base path from the request path if it exists
-if (strlen($base_path) > 0 && substr($request_path, 0, strlen($base_path)) == $base_path) {
-    $request_path = substr($request_path, strlen($base_path));
+// Define a simple routing map
+$routes = [
+    '' => 'views/home.php',
+    'home' => 'views/home.php',
+    'product' => 'product.php',
+    'category' => 'category.php',
+    'brand' => 'brand.php',
+    'page' => 'page.php',
+    'wishlist' => 'wishlist.php',
+    'search' => 'search.php',
+    'auth' => 'auth/',
+    'user' => 'user/'
+];
+
+// Route the request
+if (isset($routes[$main_route])) {
+    $target_file = $routes[$main_route];
+
+    // Handle nested routes like /auth/login or /user/dashboard
+    if (is_dir(__DIR__ . '/' . $target_file)) {
+        $sub_route = $slug ?? 'index'; // Default to index or a specific sub-page
+        
+        // Security: Whitelist allowed pages to prevent file inclusion vulnerabilities
+        $allowed_pages = [];
+        if ($main_route === 'auth') {
+            $allowed_pages = ['login', 'register', 'logout'];
+            if (!$slug) { // Redirect /auth to /auth/login
+                 header('Location: /auth/login');
+                 exit;
+            }
+        } elseif ($main_route === 'user') {
+            $allowed_pages = ['dashboard', 'orders', 'security'];
+             if (!$slug) { // Redirect /user to /user/dashboard
+                 header('Location: /user/dashboard');
+                 exit;
+            }
+        }
+
+        if (in_array($sub_route, $allowed_pages)) {
+            $page_path = __DIR__ . '/' . $target_file . $sub_route . '.php';
+            if (file_exists($page_path)) {
+                require $page_path;
+            } else {
+                show_404();
+            }
+        } else {
+            show_404();
+        }
+    } 
+    // Handle routes that require a slug, like /product/my-product
+    elseif (in_array($main_route, ['product', 'category', 'brand', 'page'])) {
+        if ($slug) {
+            $_GET['slug'] = $slug; // Make slug available for the required file
+            require __DIR__ . '/' . $target_file;
+        } else {
+            // If route requires a slug but none is provided, it's a 404
+            show_404();
+        }
+    } 
+    // Handle simple routes like /wishlist or /home
+    else {
+        require __DIR__ . '/' . $target_file;
+    }
+} else {
+    // If no route matches, it's a 404
+    show_404();
 }
 
-// Trim leading/trailing slashes
-$request_path = trim($request_path, '/');
-
-// Parse the path into segments
-$segments = explode('/', $request_path);
-$main_route = $segments[0] ?? 'home';
-
-// 3. Route the request to the correct page
-switch ($main_route) {
-    case 'home':
-    case '':
-        // This is the homepage
-        require __DIR__ . '/views/home.php';
-        break;
-
-    case 'product':
-        // Handle /product/some-slug
-        if (isset($segments[1])) {
-            $_GET['slug'] = $segments[1]; // Make the slug available for product.php
-            require __DIR__ . '/product.php';
-        } else {
-            http_response_code(404);
-            require __DIR__ . '/views/404.php';
-        }
-        break;
-
-    case 'category':
-        // Handle /category/some-slug
-        if (isset($segments[1])) {
-            $_GET['slug'] = $segments[1];
-            require __DIR__ . '/category.php';
-        } else {
-            http_response_code(404);
-            require __DIR__ . '/views/404.php';
-        }
-        break;
-
-    case 'brand':
-        // Handle /brand/some-slug
-        if (isset($segments[1])) {
-            $_GET['slug'] = $segments[1];
-            require __DIR__ . '/brand.php';
-        } else {
-            http_response_code(404);
-            require __DIR__ . '/views/404.php';
-        }
-        break;
-        
-    case 'page':
-        // Handle /page/about-us
-        if (isset($segments[1])) {
-            $_GET['slug'] = $segments[1];
-            require __DIR__ . '/page.php';
-        } else {
-            http_response_code(404);
-            require __DIR__ . '/views/404.php';
-        }
-        break;
-
-    case 'wishlist':
-        require __DIR__ . '/wishlist.php';
-        break;
-
-    case 'search':
-        require __DIR__ . '/search.php';
-        break;
-    
-    // --- Route for USER AUTHENTICATION ---
-    case 'auth':
-        // Handles routes like /auth/login, /auth/register
-        if (isset($segments[1])) {
-            $auth_page_name = $segments[1];
-            // Security: Prevent directory traversal and only allow specific filenames
-            $allowed_auth_pages = ['login.php', 'register.php', 'logout.php'];
-            $auth_page_file = $auth_page_name . '.php';
-
-            if (in_array($auth_page_file, $allowed_auth_pages) && file_exists(__DIR__ . '/auth/' . $auth_page_file)) {
-                require __DIR__ . '/auth/' . $auth_page_file;
-            } else {
-                http_response_code(404);
-                require __DIR__ . '/views/404.php';
-            }
-        } else {
-            // If someone just goes to /auth, redirect to login
-            header('Location: /auth/login');
-            exit;
-        }
-        break;
-
-    // --- NEWLY ADDED FOR USER ACCOUNT ---
-    case 'user':
-        // Handles routes like /user/dashboard, /user/orders, /user/security
-        if (isset($segments[1])) {
-            $user_page_name = $segments[1];
-            // Whitelist allowed pages for security
-            $allowed_user_pages = ['dashboard.php', 'orders.php', 'security.php'];
-            $user_page_file = $user_page_name . '.php';
-
-            if (in_array($user_page_file, $allowed_user_pages) && file_exists(__DIR__ . '/user/' . $user_page_file)) {
-                require __DIR__ . '/user/' . $user_page_file;
-            } else {
-                // If a user page does not exist (e.g., /user/invalid-page)
-                http_response_code(404);
-                require __DIR__ . '/views/404.php';
-            }
-        } else {
-            // If someone just goes to /user, redirect them to the dashboard
-            header('Location: /user/dashboard');
-            exit;
-        }
-        break;
-
-    default:
-        // If the path looks like a filename (e.g., admin.css), it's likely a static asset. Let the web server handle it.
-        // This check prevents the 404 page from showing for CSS/JS files if .htaccess isn't configured perfectly.
-        if (preg_match('/\.(?:css|js|jpg|jpeg|png|gif|ico|svg)$/', $request_path)) {
-            return false; // Let the server handle the request
-        }
-
-        // If no route matches, show a 404 error
-        http_response_code(404);
-        require __DIR__ . '/views/404.php';
-        break;
+/**
+ * Helper function to display a 404 error page.
+ * This avoids code repetition.
+ */
+function show_404() {
+    http_response_code(404);
+    require __DIR__ . '/views/404.php';
+    exit;
 }

@@ -1,88 +1,95 @@
+<?php
+// We can use the same function from header.php to get the footer menu items
+// This assumes the function is available (e.g., loaded in a common functions file)
+if (function_exists('get_menu_by_location')) {
+    $footer_menu_items = get_menu_by_location('footer');
+} else {
+    $footer_menu_items = []; // Fallback to an empty array if the function doesn't exist
+}
+?>
 </main> <!-- Closing the .main-content tag from header.php -->
 
-<!-- =======================
-Back to Top Section
-======================== -->
-<a href="#" id="back-to-top" class="back-to-top-btn">Back to top</a>
+<!-- Back to Top Button -->
+<a href="#" id="back-to-top" class="back-to-top-btn shadow-lg" title="Back to Top"><i class="bi bi-arrow-up"></i></a>
 
-<!-- =======================
-Main Footer Section
-======================== -->
-<footer class="site-footer-amazon pt-5 pb-4">
+<!-- Main Footer -->
+<footer class="site-footer bg-dark text-white pt-5 pb-4">
     <div class="container text-center text-md-start">
         <div class="row gy-4">
 
-            <!-- Column 1: Get to Know Us -->
-            <div class="col-lg-3 col-md-6">
-                <h6 class="footer-heading">Get to Know Us</h6>
+            <!-- Column 1: About the Site -->
+            <div class="col-lg-4 col-md-12 mb-4 mb-lg-0">
+                <h5 class="text-uppercase fw-bold"><?php echo e(get_setting('site_name', 'AI Affiliate')); ?></h5>
+                <p class="text-white-50">
+                    <?php echo e(get_setting('site_description', 'Your one-stop destination for the best affiliate products, curated with advanced AI technology to bring you top deals and trending items.')); ?>
+                </p>
+                <div class="mt-3 social-icons-footer">
+                    <a href="<?php echo e(get_setting('social_facebook', '#')); ?>" class="social-icon" title="Facebook"><i class="bi bi-facebook"></i></a>
+                    <a href="<?php echo e(get_setting('social_twitter', '#')); ?>" class="social-icon" title="Twitter"><i class="bi bi-twitter-x"></i></a>
+                    <a href="<?php echo e(get_setting('social_instagram', '#')); ?>" class="social-icon" title="Instagram"><i class="bi bi-instagram"></i></a>
+                </div>
+            </div>
+
+            <!-- Column 2: Footer Menu (Dynamically Generated) -->
+            <div class="col-lg-2 col-md-6">
+                <h6 class="text-uppercase footer-heading">Useful Links</h6>
                 <ul class="list-unstyled footer-links">
-                    <?php if (!empty($nav_pages)): ?>
-                        <?php foreach ($nav_pages as $page): ?>
-                            <li><a href="/page/<?php echo e($page['slug']); ?>"><?php echo e($page['title']); ?></a></li>
+                    <?php if (!empty($footer_menu_items)): ?>
+                        <?php foreach ($footer_menu_items as $item): ?>
+                            <li><a href="<?php echo e($item['url']); ?>"><?php echo e($item['title']); ?></a></li>
                         <?php endforeach; ?>
+                    <?php else: // Fallback if no menu is assigned ?>
+                        <li><a href="/page/about-us">About Us</a></li>
+                        <li><a href="/page/contact">Contact</a></li>
+                        <li><a href="/page/faq">FAQ</a></li>
                     <?php endif; ?>
-                    <li><a href="/admin/login.php">Admin Login</a></li>
                 </ul>
             </div>
 
-            <!-- Column 2: Shop with Us -->
+            <!-- Column 3: Main Categories -->
             <div class="col-lg-3 col-md-6">
-                <h6 class="footer-heading">Shop with Us</h6>
+                <h6 class="text-uppercase footer-heading">Top Categories</h6>
                 <ul class="list-unstyled footer-links">
-                     <?php if(!empty($all_parent_categories)): ?>
-                        <?php foreach(array_slice($all_parent_categories, 0, 5) as $footer_cat): // Show first 5 parent categories ?>
-                            <li><a href="/category/<?php echo e($footer_cat['slug']); ?>"><?php echo e($footer_cat['name']); ?></a></li>
-                        <?php endforeach; ?>
-                     <?php endif; ?>
+                     <?php 
+                        $footer_categories = $pdo->query("SELECT name, slug FROM categories WHERE status='published' LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
+                        foreach($footer_categories as $footer_cat):
+                     ?>
+                        <li><a href="/category/<?php echo e($footer_cat['slug']); ?>"><?php echo e($footer_cat['name']); ?></a></li>
+                     <?php endforeach; ?>
                 </ul>
             </div>
 
-            <!-- Column 3: Let Us Help You -->
+            <!-- Column 4: Contact Info -->
             <div class="col-lg-3 col-md-6">
-                <h6 class="footer-heading">Let Us Help You</h6>
-                 <ul class="list-unstyled footer-links">
-                    <li><a href="/wishlist">Your Wishlist</a></li>
-                    <li><a href="#contact">Contact Us</a></li>
-                    <li><a href="/page/faq">FAQ</a></li>
-                </ul>
+                 <h6 class="text-uppercase footer-heading">Contact</h6>
+                 <p class="footer-contact-info"><i class="bi bi-envelope-fill me-2"></i> <?php echo e(get_setting('contact_email', 'info@example.com')); ?></p>
+                 <p class="footer-contact-info"><i class="bi bi-telephone-fill me-2"></i> <?php echo e(get_setting('contact_phone', '+01 234 567 88')); ?></p>
+                 <p class="footer-contact-info"><i class="bi bi-geo-alt-fill me-2"></i> <?php echo e(get_setting('contact_address', '123 Tech Street, Silicon Valley')); ?></p>
             </div>
-
-            <!-- Column 4: Contact Info & Social -->
-            <div class="col-lg-3 col-md-6">
-                 <h6 class="footer-heading">Connect with Us</h6>
-                 <p class="footer-contact-info"><i class="fas fa-envelope me-2"></i> <?php echo e($SITE_SETTINGS['contact_email'] ?? 'info@example.com'); ?></p>
-                 <p class="footer-contact-info"><i class="fas fa-phone me-2"></i> <?php echo e($SITE_SETTINGS['contact_phone'] ?? '+ 01 234 567 88'); ?></p>
-                 <div class="mt-3 social-icons-footer">
-                    <a href="#" class="social-icon" title="Facebook"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" class="social-icon" title="Twitter"><i class="fab fa-twitter"></i></a>
-                    <a href="#" class="social-icon" title="Instagram"><i class="fab fa-instagram"></i></a>
-                 </div>
-            </div>
-        </div>
-
-        <hr class="footer-divider my-4">
-
-        <div class="text-center">
-            <a class="navbar-brand" href="/"><?php echo e($SITE_SETTINGS['site_name']); ?></a>
         </div>
     </div>
 </footer>
 
-<!-- =======================
-Sub-Footer Section
-======================== -->
-<div class="sub-footer py-3">
-    <div class="container text-center">
-        <small class="text-white-50">© <?php echo date('Y'); ?> <?php echo e($SITE_SETTINGS['site_name']); ?>. All Rights Reserved. An Amazon-inspired affiliate marketing project.</small>
-    </div>
+<!-- Sub-Footer -->
+<div class="sub-footer py-3 bg-black text-center">
+    <small class="text-white-50">© <?php echo date('Y'); ?> <?php echo e(get_setting('site_name')); ?>. All Rights Reserved.</small>
 </div>
 
+<!-- =======================
+ JAVASCRIPTS & STYLES
+======================== -->
 
-<!-- JavaScript Bundles -->
+<!-- Page-specific styles passed from templates (e.g., home.php) -->
+<?php if (isset($page_styles) && !empty($page_styles)): ?>
+<style>
+    <?php echo $page_styles; ?>
+</style>
+<?php endif; ?>
+
+<!-- Core JavaScript Bundles -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 
-<!-- Slick Carousel JS (if needed by the page) -->
+<!-- Extra JS libraries passed from templates (e.g., Slick Carousel) -->
 <?php if (isset($extra_js) && is_array($extra_js)): ?>
     <?php foreach ($extra_js as $js_url): ?>
         <script src="<?php echo e($js_url); ?>"></script>
@@ -92,38 +99,30 @@ Sub-Footer Section
 <!-- Main Custom JS -->
 <script src="/public/js/main.js"></script>
 
-<!-- Inline script for initializations -->
+<!-- Inline script for page-specific initializations -->
 <script>
-    AOS.init({duration: 800, once: true});
+document.addEventListener('DOMContentLoaded', function() {
+    // Back to top button logic
+    const backToTopBtn = document.getElementById('back-to-top');
+    if (backToTopBtn) {
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 300) {
+                backToTopBtn.classList.add('show');
+            } else {
+                backToTopBtn.classList.remove('show');
+            }
+        });
+        backToTopBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
 
-    // Initialize Slick Carousel if the element exists
-    document.addEventListener('DOMContentLoaded', function() {
-        if (typeof $ !== 'undefined' && $.fn.slick && document.querySelector('.brand-carousel')) {
-            $('.brand-carousel').slick({
-                slidesToShow: 6,
-                slidesToScroll: 1,
-                autoplay: true,
-                autoplaySpeed: 2500,
-                arrows: false,
-                dots: false,
-                pauseOnHover: true,
-                responsive: [
-                    { breakpoint: 992, settings: { slidesToShow: 4 } },
-                    { breakpoint: 768, settings: { slidesToShow: 3 } },
-                    { breakpoint: 576, settings: { slidesToShow: 2 } }
-                ]
-            });
-        }
-
-        // Back to top button logic
-        const backToTopBtn = document.getElementById('back-to-top');
-        if(backToTopBtn) {
-            backToTopBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-        }
-    });
+    // Page-specific inline script from template (e.g., for initializing carousels)
+    <?php if (isset($page_inline_script) && !empty($page_inline_script)): ?>
+        <?php echo $page_inline_script; ?>
+    <?php endif; ?>
+});
 </script>
 
 </body>
