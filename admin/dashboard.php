@@ -1,19 +1,20 @@
 <?php
-// Set the unique key for this page, which will be used to highlight the active sidebar menu item
+// =================================================================
+// 1. PAGE CONFIGURATION AND CORE SETUP
+// =================================================================
 $page_key = 'dashboard';
 $page_title = 'Dashboard';
 
-// Load the core application file which handles sessions, db connections, and functions
 require_once __DIR__ . '/../includes/app.php';
-
-// Ensure the user is an authenticated admin
 require_login();
 
-// --- Fetch all necessary data for the dashboard widgets ---
+// =================================================================
+// 2. DATA FETCHING FOR WIDGETS
+// =================================================================
 try {
     // Fetch total counts for the main statistics cards
     $total_products = $pdo->query("SELECT COUNT(id) FROM products WHERE is_published = 1")->fetchColumn();
-    $total_orders = $pdo->query("SELECT COUNT(id) FROM orders")->fetchColumn(); // Assuming you have an 'orders' table
+    $total_orders = $pdo->query("SELECT COUNT(id) FROM orders")->fetchColumn();
     $total_customers = $pdo->query("SELECT COUNT(id) FROM users")->fetchColumn();
     $today_clicks = $pdo->query("SELECT COUNT(id) FROM affiliate_clicks WHERE click_time::date = CURRENT_DATE")->fetchColumn();
     
@@ -44,31 +45,29 @@ try {
     }
 
 } catch (PDOException $e) {
-    // Set a flash message for the error and redirect or log
+    // Gracefully handle database errors without crashing the page
     set_flash_message('A database error occurred on the dashboard: ' . $e->getMessage(), 'danger');
-    // For a live site, you might just show a generic error and log the detailed one.
+    // Set default values to avoid errors in the view
+    $total_products = $total_orders = $total_customers = $today_clicks = 0;
+    $top_trending_products = $top_clicked_products = [];
+    $clicks_last_7_days = ['labels' => [], 'data' => []];
 }
 
-// Include the new, modern header
-require_once 'includes/header.php';
+// =================================================================
+// 3. RENDER THE VIEW
+// =================================================================
+require_once 'includes/header.php'; // This includes the new header and sidebar
 ?>
 
-<!-- Page-specific header with title and breadcrumbs -->
+<!-- Page Header (Removed the duplicate one from your old file) -->
 <div class="page-header mb-4">
     <div class="row align-items-center">
-        <div class="col-sm-6">
-            <h1 class="page-title"><?php echo e($page_title); ?></h1>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="/admin/dashboard.php">Home</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
-                </ol>
-            </nav>
+        <div class="col">
+            <h1 class="page-title">Dashboard</h1>
         </div>
-        <div class="col-sm-6 text-sm-end">
-            <div class="btn-toolbar justify-content-sm-end">
+        <div class="col-auto">
+            <div class="btn-toolbar">
                 <a href="/admin/products.php?action=add" class="btn btn-primary"><i class="fas fa-plus me-2"></i>New Product</a>
-                <a href="/admin/settings.php" class="btn btn-outline-secondary ms-2"><i class="fas fa-cog"></i>Settings</a>
             </div>
         </div>
     </div>
@@ -86,7 +85,7 @@ require_once 'includes/header.php';
                     </div>
                     <div class="col-auto"><i class="fas fa-box fa-2x text-gray-300"></i></div>
                 </div>
-                <a href="/admin/products.php" class="stretched-link"></a>
+                <a href="/admin/products.php" class="stretched-link" aria-label="View Products"></a>
             </div>
         </div>
     </div>
@@ -100,7 +99,7 @@ require_once 'includes/header.php';
                     </div>
                     <div class="col-auto"><i class="fas fa-shopping-bag fa-2x text-gray-300"></i></div>
                 </div>
-                <a href="/admin/orders.php" class="stretched-link"></a>
+                <a href="/admin/orders.php" class="stretched-link" aria-label="View Orders"></a>
             </div>
         </div>
     </div>
@@ -114,7 +113,7 @@ require_once 'includes/header.php';
                     </div>
                     <div class="col-auto"><i class="fas fa-users fa-2x text-gray-300"></i></div>
                 </div>
-                <a href="/admin/users.php" class="stretched-link"></a>
+                <a href="/admin/users.php" class="stretched-link" aria-label="View Customers"></a>
             </div>
         </div>
     </div>
@@ -128,7 +127,7 @@ require_once 'includes/header.php';
                     </div>
                     <div class="col-auto"><i class="fas fa-mouse-pointer fa-2x text-gray-300"></i></div>
                 </div>
-                <a href="/admin/clicked_leads.php" class="stretched-link"></a>
+                <a href="/admin/clicked_leads.php" class="stretched-link" aria-label="View Click Logs"></a>
             </div>
         </div>
     </div>
@@ -139,18 +138,14 @@ require_once 'includes/header.php';
     <!-- Clicks Chart -->
     <div class="col-lg-12 mb-4">
         <div class="card shadow-sm">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="m-0 font-weight-bold text-primary">Affiliate Clicks (Last 7 Days)</h6>
-            </div>
+            <div class="card-header"><h6 class="m-0 font-weight-bold">Affiliate Clicks (Last 7 Days)</h6></div>
             <div class="card-body">
-                <div class="chart-container" style="position: relative; height:300px;">
-                    <canvas id="clicksChart"></canvas>
-                </div>
+                <div class="chart-container" style="position: relative; height:300px;"><canvas id="clicksChart"></canvas></div>
             </div>
         </div>
     </div>
 
-    <!-- Top Trending Products -->
+    <!-- Top Trending & Clicked Products -->
     <div class="col-lg-6 mb-4">
         <div class="card shadow-sm h-100">
             <div class="card-header"><h6 class="m-0 font-weight-bold">Top 5 Trending Products</h6></div>
@@ -166,8 +161,6 @@ require_once 'includes/header.php';
             </div>
         </div>
     </div>
-
-    <!-- Top Clicked Products -->
     <div class="col-lg-6 mb-4">
         <div class="card shadow-sm h-100">
             <div class="card-header"><h6 class="m-0 font-weight-bold">Top 5 Clicked Products</h6></div>
@@ -186,7 +179,7 @@ require_once 'includes/header.php';
 </div>
 
 <?php
-// We will move the script to a separate file, but for now, we define it here to be included by the footer.
+// Define page-specific scripts to be loaded by footer.php
 $page_scripts = "
 <script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>
 <script>
