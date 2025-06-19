@@ -32,7 +32,7 @@ try {
     $current_menu_id = (int)$current_menu_id;
 
     // মেনুতে যোগ করার জন্য পেজ এবং ক্যাটাগরি ফেচ করা
-    $pages = $pdo->query("SELECT id, title, slug FROM pages WHERE status = 'published' ORDER BY title ASC")->fetchAll(PDO::FETCH_ASSOC);
+    $pages = $pdo->query("SELECT id, title, slug FROM site_pages WHERE is_published = 1 ORDER BY title ASC")->fetchAll(PDO::FETCH_ASSOC);
     $categories = $pdo->query("SELECT id, name, slug FROM categories ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
     // বর্তমান মেনুর নাম খুঁজে বের করা
