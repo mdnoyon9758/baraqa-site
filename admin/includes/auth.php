@@ -1,24 +1,23 @@
 <?php
 /**
- * This file is the single entry point for security and common functions for all admin pages.
- * It must be the first file required on any secure page in the /admin/ directory.
+ * Security & Authentication Entry Point for Admin Panel
+ *
+ * This file must be the first file required on any secure admin page.
+ * It handles session management, loads the core application, and enforces authentication.
  */
 
-// Ensure a session is active. The functions.php file also has this check,
-// but it's good practice to have it here as well, as this is the security entry point.
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// Load the core application file. This single file is responsible for:
+// 1. Starting a session safely.
+// 2. Connecting to the database (via db_connect.php).
+// 3. Loading all global helper functions (via functions.php).
+// The path goes up two levels from /admin/includes/ to the project root.
+require_once __DIR__ . '/../../includes/app.php';
 
-// Load core functions and the database connection.
-// The path is crucial: from /bs/admin/includes/ go up two levels to /bs/ then into /includes/
-require_once __DIR__ . '/../../includes/functions.php';
-
-// Enforce login for the page.
-// The require_login() function (defined in functions.php) will handle the
-// redirection to login.php if the user is not authenticated, and then exit the script.
+// Enforce admin login.
+// The require_login() function (from functions.php) will check for an active admin session.
+// If the user is not authenticated, it will redirect them to the login page and stop script execution.
 require_login();
 
-// Generate a CSRF token for any forms that might be on the page.
-// This token should be included as a hidden field in all POST forms.
+// Generate a CSRF token to be used in all POST forms on the page.
+// This helps protect against Cross-Site Request Forgery attacks.
 $csrf_token = generate_csrf_token();

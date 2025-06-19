@@ -1,21 +1,24 @@
 <?php
-// We need functions.php to access log_admin_activity() and session management.
-// The functions.php file already handles session_start().
-require_once __DIR__ . '/../includes/functions.php';
+/**
+ * Admin Logout Script
+ *
+ * This script handles the secure logout process for an authenticated admin.
+ */
+
+// Load the core application file which includes logging and session functions.
+require_once __DIR__ . '/../includes/app.php';
 
 // Log the logout action before destroying the session.
-// We check if admin_id exists to ensure we are logging out a valid session.
 if (isset($_SESSION['admin_id'])) {
     log_admin_activity('Admin logged out successfully.');
 }
 
 // --- Standard Logout Procedure ---
 
-// 1. Unset all of the session variables.
+// 1. Unset all session variables.
 $_SESSION = [];
 
-// 2. If it's desired to kill the session, also delete the session cookie.
-// Note: This will destroy the session, and not just the session data!
+// 2. Delete the session cookie to ensure the session is completely terminated.
 if (ini_get("session.use_cookies")) {
     $params = session_get_cookie_params();
     setcookie(session_name(), '', time() - 42000,
@@ -24,15 +27,14 @@ if (ini_get("session.use_cookies")) {
     );
 }
 
-// 3. Finally, destroy the session.
+// 3. Destroy the session.
 session_destroy();
 
-// 4. Redirect to login page with a success message.
-// We need to start a new, clean session to store the flash message.
-session_start();
-$_SESSION['success_message'] = "You have been logged out successfully.";
+// 4. Redirect to the login page with a success message.
+// We use our custom flash message function for this.
+// Note: set_flash_message() will handle starting a new session if needed.
+set_flash_message("You have been logged out successfully.", "success");
 
-// CHANGED: Using absolute path for redirect
+// Redirect to the login page.
 header("Location: /admin/login.php");
 exit;
-?>

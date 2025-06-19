@@ -1,18 +1,42 @@
 <?php
-// Increase execution time for potentially long-running tasks
+/**
+ * AJAX Handler for Manually Running Scheduled Tasks
+ *
+ * This script is called via AJAX from the scheduler page to execute a background PHP script.
+ * It is a secure entry point for running approved cron jobs on demand.
+ */
+
+// Set a longer execution time for potentially long-running background tasks.
 set_time_limit(600);
 header('Content-Type: application/json');
-require_once 'includes/auth.php'; // Ensures only logged-in admins can run tasks
 
-$response = ['status' => 'error', 'message' => 'Invalid task key.', 'output' => ''];
+// =================================================================
+// 1. CORE SETUP AND SECURITY CHECKS
+// =================================================================
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_POST['task_key'])) {
+// Load the core application and enforce admin authentication.
+// Note: This script does NOT include any visual elements (header/footer).
+require_once __DIR__ . '/../includes/app.php';
+require_login();
+
+$response = ['status' => 'error', 'message' => 'Invalid request or task key.'];
+
+// This script only accepts POST requests with a valid CSRF token and a task key.
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_POST['task_key']) || !verify_csrf_token($_POST['csrf_token'])) {
+    if (!verify_csrf_token($_POST['csrf_token'])) {
+        $response['message'] = 'Invalid security token. Please refresh the page and try again.';
+    }
     echo json_encode($response);
     exit;
 }
+
 $task_key = $_POST['task_key'];
 
-// This list MUST match scheduler.php for consistency
+// =================================================================
+// 2. TASK EXECUTION LOGIC
+// =================================================================
+
+// A whitelist of approved tasks. This MUST match the tasks defined in scheduler.php.
 $cron_jobs = [
     'product_import_update' => ['script_path' => realpath(__DIR__ . '/../jobs/cron_job.php'), 'params' => '--no-images'],
     'product_import_new' => ['script_path' => realpath(__DIR__ . '/../jobs/cron_job.php'), 'params' => '--force-new'],
@@ -36,19 +60,20 @@ if (!$script_path || !file_exists($script_path)) {
 }
 
 try {
-    // CRITICAL CHANGE: Use 'php' for Linux environments like Render.com
-    // Removed the hardcoded Windows path 'C:\xampp\php\php.exe'
+    // Determine the PHP executable path. 'php' is standard for Linux/macOS.
     $php_executable = 'php';
 
-    // Build the command securely to prevent command injection vulnerabilities
+    // Build the command securely.
     $command = escapeshellcmd($php_executable) . ' ' . escapeshellarg($script_path);
     if (!empty($params)) {
-        // We assume params are safe, but it's good practice to be aware
+        // Parameters are passed directly. Ensure they are safe within the cron scripts.
         $command .= ' ' . $params;
     }
     
-    // Execute the command and capture both STDOUT and STDERR
+    // Execute the command and capture all output (STDOUT and STDERR).
     $output = shell_exec($command . ' 2>&1');
+
+    log_admin_activity("Manually ran task: {$task_key}");
 
     $response = [
         'status' => 'success',
@@ -59,6 +84,7 @@ try {
 } catch (Exception $e) {
     $response['message'] = 'A PHP exception occurred while trying to run the task.';
     $response['output'] = $e->getMessage();
+    error_log("Task runner exception for '{$task_key}': " . $e->getMessage());
 }
 
 echo json_encode($response);

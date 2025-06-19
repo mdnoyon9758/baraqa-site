@@ -1,76 +1,121 @@
 <?php
-// We assume a session is active and necessary functions are loaded by the core app.php
-$site_title = get_setting('site_name') ?? 'BARAQA Admin';
-$page_title = isset($page_title) ? e($page_title) : 'Dashboard';
-$full_title = $page_title . ' - ' . e($site_title);
+// We assume the app.php file (which includes functions.php) has already been loaded.
+
+// Fetch settings for the frontend theme
+$site_name = get_setting('site_name', 'BARAQA Affiliate Hub');
+$favicon_url = get_setting('site_favicon_url', '/favicon.ico'); // Default favicon at root
+
+// Fetch theme options for dynamic styling
+$primary_color = get_setting('primary_color', '#0d6efd'); // Bootstrap's default blue
+$secondary_color = get_setting('secondary_color', '#6c757d'); // Bootstrap's default gray
+$custom_css = get_setting('custom_css', '');
+
+// Helper function to convert hex color to RGB values for Bootstrap variables
+function hexToRgb($hex) {
+    $hex = str_replace('#', '', $hex);
+    if(strlen($hex) == 3) {
+        $r = hexdec(substr($hex, 0, 1) . substr($hex, 0, 1));
+        $g = hexdec(substr($hex, 1, 1) . substr($hex, 1, 1));
+        $b = hexdec(substr($hex, 2, 1) . substr($hex, 2, 1));
+    } else {
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+    }
+    return "$r, $g, $b";
+}
+
+// Prepare dynamic CSS variables
+$primary_color_rgb = hexToRgb($primary_color);
+$secondary_color_rgb = hexToRgb($secondary_color);
+
+// Dynamic page title (each page should set its own $page_title)
+$page_title_full = isset($page_title) ? e($page_title) . ' - ' . e($site_name) : e($site_name);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $full_title; ?></title>
+    <title><?php echo $page_title_full; ?></title>
 
-    <!-- Meta Tags for Admin Panel -->
-    <meta name="robots" content="noindex, nofollow">
-
+    <!-- SEO Meta Tags (should be set dynamically per page) -->
+    <meta name="description" content="<?php echo isset($meta_description) ? e($meta_description) : 'Find the best deals and products.'; ?>">
+    <link rel="icon" type="image/x-icon" href="<?php echo e($favicon_url); ?>">
+    
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <!-- Core CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
-    <!-- Custom Admin CSS (New Path) -->
-    <link rel="stylesheet" href="/admin/assets/css/admin-style.css">
+    <!-- Custom CSS for the frontend -->
+    <link rel="stylesheet" href="/public/css/style.css">
+
+    <!-- Dynamic Theme Options -->
+    <style>
+        :root {
+            --bs-primary: <?php echo e($primary_color); ?>;
+            --bs-primary-rgb: <?php echo e($primary_color_rgb); ?>;
+            --bs-secondary: <?php echo e($secondary_color); ?>;
+            --bs-secondary-rgb: <?php echo e($secondary_color_rgb); ?>;
+            
+            /* You can override other Bootstrap colors here if needed */
+        }
+
+        <?php 
+        // Output custom CSS from theme options.
+        // It's assumed the admin is trusted. If not, this needs sanitization.
+        echo $custom_css; 
+        ?>
+    </style>
 </head>
-<body class="bg-light">
-    <!-- This SVG sprite is from your old header, kept for compatibility -->
-    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
-        <symbol id="speedometer2" viewBox="0 0 16 16"><path d="M8 4a.5.5 0 0 1 .5.5V6a.5.5 0 0 1-1 0V4.5A.5.5 0 0 1 8 4zM3.732 5.732a.5.5 0 0 1 .707 0l.915.914a.5.5 0 1 1-.708.708l-.914-.915a.5.5 0 0 1 0-.707zM2 10a.5.5 0 0 1 .5-.5h1.586a.5.5 0 0 1 0 1H2.5A.5.5 0 0 1 2 10zm9.5 0a.5.5 0 0 1 .5-.5h1.5a.5.5 0 0 1 0 1H12a.5.5 0 0 1-.5-.5zm.754-4.246a.5.5 0 0 1 0 .708l-.914.915a.5.5 0 1 1-.707-.708l.914-.914a.5.5 0 0 1 .707 0zM8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zM6.5 4.5v-1a1.5 1.5 0 1 1 3 0v1h-3zM8 16a6 6 0 1 1 0-12 6 6 0 0 1 0 12zM10 10.5a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0z"/></symbol>
-        <!-- Other symbols... -->
-    </svg>
-
-    <div class="admin-layout">
-        <!-- Sidebar will be included here -->
-        <?php require_once __DIR__ . '/sidebar.php'; ?>
-
-        <div class="main-content-wrapper">
-            <!-- Top Navigation Bar -->
-            <header class="top-navbar">
-                <div class="container-fluid">
-                    <!-- Sidebar Toggle Button -->
-                    <button id="sidebar-toggle" type="button" class="btn btn-icon">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    
-                    <div class="ms-auto d-flex align-items-center">
-                        <!-- Visit Site Button -->
-                        <a href="/" target="_blank" class="btn btn-sm btn-outline-secondary me-3">View Website</a>
-
-                        <!-- User Profile Dropdown -->
-                        <div class="dropdown">
-                            <a href="#" class="nav-link dropdown-toggle d-flex align-items-center" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <img src="https://via.placeholder.com/40" class="rounded-circle me-2" width="32" height="32" alt="Avatar">
-                                <span class="d-none d-sm-inline"><?php echo e($_SESSION['admin_name'] ?? 'Admin'); ?></span>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li><a class="dropdown-item" href="/admin/profile.php"><i class="fas fa-user-circle me-2"></i>Profile</a></li>
-                                <li><a class="dropdown-item" href="/admin/settings.php"><i class="fas fa-cog me-2"></i>Settings</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="/admin/logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
-                            </ul>
-                        </div>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+            <div class="container">
+                <a class="navbar-brand" href="/">
+                    <?php 
+                    $site_logo_url = get_setting('site_logo_url');
+                    if ($site_logo_url): ?>
+                        <img src="<?php echo e($site_logo_url); ?>" alt="<?php echo e($site_name); ?> Logo" style="max-height: 40px;">
+                    <?php else: ?>
+                        <?php echo e($site_name); ?>
+                    <?php endif; ?>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNavbar">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                        <!-- Other nav links can be generated dynamically -->
+                    </ul>
+                    <div class="d-flex align-items-center">
+                        <?php if (is_user_logged_in()): ?>
+                            <div class="dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                                    My Account
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="/user/dashboard">Dashboard</a></li>
+                                    <li><a class="dropdown-item" href="/user/orders">My Orders</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="/auth/logout.php">Logout</a></li>
+                                </ul>
+                            </div>
+                        <?php else: ?>
+                            <a href="/auth/login.php" class="btn btn-outline-primary btn-sm me-2">Login</a>
+                            <a href="/auth/register.php" class="btn btn-primary btn-sm">Register</a>
+                        <?php endif; ?>
                     </div>
                 </div>
-            </header>
+            </div>
+        </nav>
+    </header>
 
-            <!-- Page Content Starts Here -->
-            <main class="page-content">
-                <div class="container-fluid">
-                    <?php display_flash_messages(); ?>
+    <main class="py-4">
+        <div class="container">
