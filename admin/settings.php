@@ -1,97 +1,187 @@
 <?php
-$page_title = "Site Settings";
-require_once 'includes/auth.php'; // Handles session, auth, and CSRF token
-require_once 'includes/admin_header.php';
+// =================================================================
+// 1. PAGE CONFIGURATION AND CORE SETUP
+// =================================================================
+$page_key = 'general_settings'; // Corresponds to the key in the sidebar menu
+$page_title = 'Site Settings';
 
-// Handle settings update
+require_once __DIR__ . '/../includes/app.php';
+require_login();
+
+// =================================================================
+// 2. HANDLE POST REQUESTS (SETTINGS UPDATE)
+// =================================================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
-        $_SESSION['error_message'] = 'CSRF token mismatch. Action aborted.';
-        header('Location: settings.php');
+    if (!verify_csrf_token($_POST['csrf_token'])) {
+        set_flash_message('CSRF token mismatch. Action aborted.', 'danger');
+        header('Location: /admin/settings.php');
         exit;
     }
 
     try {
         $pdo->beginTransaction();
+        
+        // This array holds all checkbox keys. If a key is in this array but not in the POST data, its value is 0.
+        $all_checkboxes = ['allow_user_registration', 'show_featured_section']; 
 
-        // Loop through all posted data
-        foreach ($_POST['settings'] as $key => $value) {
-            // Handle checkbox/toggle switch values
-            // If a checkbox setting is not in POST, it means it was unchecked (value 0)
-            if (isset($_POST['is_checkbox']) && in_array($key, $_POST['is_checkbox'])) {
-                $value = isset($_POST['settings'][$key]) ? 1 : 0;
-            }
-            
-            // For checkboxes that were not submitted (unchecked)
-            if (isset($_POST['all_checkboxes']) && !isset($_POST['settings'][$key])) {
-                 if (in_array($key, $_POST['all_checkboxes'])){
-                    $value = 0;
-                 }
-            }
+        $settings_to_update = $_POST['settings'] ?? [];
 
+        foreach ($all_checkboxes as $checkbox_key) {
+            if (!isset($settings_to_update[$checkbox_key])) {
+                $settings_to_update[$checkbox_key] = 0; // Set to 0 if unchecked
+            }
+        }
+
+        foreach ($settings_to_update as $key => $value) {
             $stmt = $pdo->prepare("UPDATE site_settings SET setting_value = :value WHERE setting_key = :key");
             $stmt->execute(['value' => trim($value), 'key' => $key]);
         }
         
         $pdo->commit();
-        $_SESSION['success_message'] = "Settings updated successfully!";
+        set_flash_message('Settings updated successfully!', 'success');
 
     } catch (PDOException $e) {
         $pdo->rollBack();
-        $_SESSION['error_message'] = 'Database error: ' . $e->getMessage();
+        set_flash_message('Database error: ' . $e->getMessage(), 'danger');
     }
 
-    // Redirect to prevent form resubmission
-    header('Location: settings.php');
+    header('Location: /admin/settings.php');
     exit;
 }
 
-// Fetch all settings from the database to display in the form
-$all_settings = $pdo->query("SELECT * FROM site_settings ORDER BY setting_key ASC")->fetchAll(PDO::FETCH_ASSOC);
+// =================================================================
+// 3. PREPARE AND RENDER THE VIEW
+// =================================================================
+
+require_once 'includes/header.php';
+
+// Fetch all settings and organize them into an associative array for easy access
+$settings_query = $pdo->query("SELECT setting_key, setting_value FROM site_settings");
+$settings = $settings_query->fetchAll(PDO::FETCH_KEY_PAIR);
+
+// Helper function to get a setting value safely
+function get_s($key, $default = '') {
+    global $settings;
+    return isset($settings[$key]) ? e($settings[$key]) : $default;
+}
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0 text-gray-800"><?php echo e($page_title); ?></h1>
+<!-- Page Header -->
+<div class="page-header mb-4">
+    <h1 class="page-title">Site Settings</h1>
 </div>
 
-<div class="card shadow mb-4">
-    <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">General Settings</h6>
-    </div>
-    <div class="card-body">
-        <form action="settings.php" method="POST">
-            <input type="hidden" name="csrf_token" value="<?php echo e($csrf_token); ?>">
-            
-            <?php 
-            $checkboxes = [];
-            foreach ($all_settings as $setting): 
-                $key = e($setting['setting_key']);
-                $value = e($setting['setting_value']);
-                $label = ucwords(str_replace('_', ' ', $key));
-            ?>
-                <div class="row mb-3">
-                    <label for="<?php echo $key; ?>" class="col-sm-4 col-form-label"><?php echo $label; ?></label>
-                    <div class="col-sm-8">
-                        <?php if ($key === 'allow_admin_registration'): // Example of a toggle switch (checkbox) ?>
+<!-- Tab-based Navigation for Settings -->
+<ul class="nav nav-tabs" id="settingsTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general-tab-pane" type="button" role="tab">General</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="appearance-tab" data-bs-toggle="tab" data-bs-target="#appearance-tab-pane" type="button" role="tab">Appearance</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="api-tab" data-bs-toggle="tab" data-bs-target="#api-tab-pane" type="button" role="tab">API Keys</button>
+    </li>
+</ul>
+
+<form action="/admin/settings.php" method="POST">
+    <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="tab-content" id="settingsTabsContent">
+                <!-- General Settings Tab -->
+                <div class="tab-pane fade show active" id="general-tab-pane" role="tabpanel">
+                    <h5 class="mb-4">General Information</h5>
+                    <div class="row mb-3">
+                        <label for="site_name" class="col-sm-3 col-form-label">Site Name</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" id="site_name" name="settings[site_name]" value="<?php echo get_s('site_name'); ?>">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="site_tagline" class="col-sm-3 col-form-label">Tagline</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" id="site_tagline" name="settings[site_tagline]" value="<?php echo get_s('site_tagline'); ?>">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="admin_email" class="col-sm-3 col-form-label">Admin Email</label>
+                        <div class="col-sm-9">
+                            <input type="email" class="form-control" id="admin_email" name="settings[admin_email]" value="<?php echo get_s('admin_email'); ?>">
+                        </div>
+                    </div>
+                    <hr class="my-4">
+                    <h5 class="mb-4">User Settings</h5>
+                    <div class="row mb-3">
+                        <label for="allow_user_registration" class="col-sm-3 col-form-label">User Registration</label>
+                        <div class="col-sm-9">
                             <div class="form-check form-switch">
-                                <input type="hidden" name="all_checkboxes[]" value="<?php echo $key; ?>">
-                                <input class="form-check-input" type="checkbox" role="switch" id="<?php echo $key; ?>" name="settings[<?php echo $key; ?>]" value="1" <?php echo ($value == 1) ? 'checked' : ''; ?>>
+                                <input class="form-check-input" type="checkbox" role="switch" id="allow_user_registration" name="settings[allow_user_registration]" value="1" <?php echo get_s('allow_user_registration') == 1 ? 'checked' : ''; ?>>
+                                <label class="form-check-label" for="allow_user_registration">Allow new users to register</label>
                             </div>
-                            <small class="form-text text-muted">Allow new admins to register from the login page.</small>
-                        <?php elseif (strpos($key, 'products_per_') !== false): // Example of a number input ?>
-                            <input type="number" class="form-control" id="<?php echo $key; ?>" name="settings[<?php echo $key; ?>]" value="<?php echo $value; ?>">
-                        <?php else: // Default to a text input ?>
-                            <input type="text" class="form-control" id="<?php echo $key; ?>" name="settings[<?php echo $key; ?>]" value="<?php echo $value; ?>">
-                        <?php endif; ?>
+                        </div>
                     </div>
                 </div>
-            <?php endforeach; ?>
 
-            <div class="row">
-                <div class="col-sm-8 offset-sm-4">
-                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                <!-- Appearance Settings Tab -->
+                <div class="tab-pane fade" id="appearance-tab-pane" role="tabpanel">
+                    <h5 class="mb-4">Logos and Branding</h5>
+                    <div class="row mb-3">
+                        <label for="site_logo_url" class="col-sm-3 col-form-label">Site Logo URL</label>
+                        <div class="col-sm-9">
+                            <input type="url" class="form-control" id="site_logo_url" name="settings[site_logo_url]" value="<?php echo get_s('site_logo_url'); ?>" placeholder="https://example.com/logo.png">
+                        </div>
+                    </div>
+                     <div class="row mb-3">
+                        <label for="site_favicon_url" class="col-sm-3 col-form-label">Favicon URL</label>
+                        <div class="col-sm-9">
+                            <input type="url" class="form-control" id="site_favicon_url" name="settings[site_favicon_url]" value="<?php echo get_s('site_favicon_url'); ?>" placeholder="https://example.com/favicon.ico">
+                        </div>
+                    </div>
+                    <hr class="my-4">
+                    <h5 class="mb-4">Homepage Settings</h5>
+                     <div class="row mb-3">
+                        <label for="show_featured_section" class="col-sm-3 col-form-label">Featured Section</label>
+                        <div class="col-sm-9">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="show_featured_section" name="settings[show_featured_section]" value="1" <?php echo get_s('show_featured_section') == 1 ? 'checked' : ''; ?>>
+                                <label class="form-check-label" for="show_featured_section">Show featured brands/products section on homepage</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Settings Tab -->
+                <div class="tab-pane fade" id="api-tab-pane" role="tabpanel">
+                    <h5 class="mb-4">Affiliate API Credentials</h5>
+                    <div class="alert alert-warning">Please be careful with these keys. Do not share them.</div>
+                    <div class="row mb-3">
+                        <label for="amazon_affiliate_id" class="col-sm-3 col-form-label">Amazon Associate Tag</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" id="amazon_affiliate_id" name="settings[amazon_affiliate_id]" value="<?php echo get_s('amazon_affiliate_id'); ?>">
+                        </div>
+                    </div>
+                     <div class="row mb-3">
+                        <label for="amazon_access_key" class="col-sm-3 col-form-label">Amazon Access Key</label>
+                        <div class="col-sm-9">
+                            <input type="password" class="form-control" id="amazon_access_key" name="settings[amazon_access_key]" value="<?php echo get_s('amazon_access_key'); ?>">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="amazon_secret_key" class="col-sm-3 col-form-label">Amazon Secret Key</label>
+                        <div class="col-sm-9">
+                            <input type="password" class="form-control" id="amazon_secret_key" name="settings[amazon_secret_key]" value="<?php echo get_s('amazon_secret_key'); ?>">
+                        </div>
+                    </div>
                 </div>
             </div>
-        </form>
+        </div>
+        <div class="card-footer text-end">
+            <button type="submit" class="btn btn-primary">Save All Settings</button>
+        </div>
     </div>
-</div>
+</form>
+
+<?php
+require_once 'includes/footer.php';
+?>
