@@ -61,9 +61,18 @@ function generate_csrf_token() {
     return $_SESSION['csrf_token'];
 }
 
-function verify_csrf_token($token) {
+/**
+ * Verifies a CSRF token.
+ *
+ * @param string $token The token from the request.
+ * @param bool $consume If true, the token will be unset after verification (for one-time use).
+ * @return bool
+ */
+function verify_csrf_token($token, $consume = true) {
     if (isset($_SESSION['csrf_token']) && !empty($token) && hash_equals($_SESSION['csrf_token'], $token)) {
-        unset($_SESSION['csrf_token']);
+        if ($consume) {
+            unset($_SESSION['csrf_token']);
+        }
         return true;
     }
     return false;

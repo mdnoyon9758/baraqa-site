@@ -9,7 +9,7 @@ header('Content-Type: application/json');
 $input = json_decode(file_get_contents('php://input'), true);
 
 // Basic security checks
-if (!$input || !isset($input['action']) || !verify_csrf_token($input['csrf_token'] ?? '')) {
+if (!$input || !isset($input['action']) || !verify_csrf_token($input['csrf_token'] ?? '', false)) {
     echo json_encode(['status' => 'error', 'message' => 'Invalid request or CSRF token mismatch.']);
     exit;
 }
