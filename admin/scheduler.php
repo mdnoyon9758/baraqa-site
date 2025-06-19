@@ -50,7 +50,7 @@ $cron_jobs = [
 
 <div class="alert alert-info">
     <h4 class="alert-heading"><i class="fas fa-info-circle me-2"></i>How does this work?</h4>
-    <p class="mb-0">This page allows you to manually run automated tasks (cron jobs) that are usually handled by the server. The output of each task will be shown in a popup window. This is useful for testing or forcing an immediate update.</p>
+    <p class="mb-0">This page allows you to manually run automated tasks (cron jobs). The output of each task will be shown in a popup window. This is useful for testing or forcing an immediate update.</p>
 </div>
 
 <div class="card shadow-sm">
@@ -106,6 +106,7 @@ $cron_jobs = [
 
 <?php
 // Page-specific JavaScript
+$csrf_token_js = generate_csrf_token(); // Generate token once for JS
 $page_scripts = "
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -127,12 +128,13 @@ document.addEventListener('DOMContentLoaded', function() {
             this.disabled = true;
             
             outputContent.textContent = 'Executing task, please wait...';
-            modalTitle.textContent = `Output for: ${taskName}`;
+            // CORRECTED: Use concatenation instead of complex string interpolation
+            modalTitle.textContent = 'Output for: ' + taskName;
             outputModal.show();
             
             const formData = new FormData();
             formData.append('task_key', taskKey);
-            formData.append('csrf_token', '" . generate_csrf_token() . "'); // Pass the CSRF token
+            formData.append('csrf_token', '{$csrf_token_js}');
 
             fetch('/admin/run_task_handler.php', {
                 method: 'POST',
@@ -140,7 +142,8 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => {
                 if (!response.ok) {
-                    return response.text().then(text => Promise.reject(`HTTP Error ${response.status}: ${text}`));
+                    // CORRECTED: Use template literals for cleaner string construction
+                    return response.text().then(text => Promise.reject(`HTTP Error \${response.status}: \${text}`));
                 }
                 return response.json();
             })
@@ -148,11 +151,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if(data.status === 'success') {
                     outputContent.textContent = data.output;
                 } else {
-                    outputContent.textContent = `Error: ${data.message}\\n\\n${data.output || ''}`;
+                    // CORRECTED: Use template literals
+                    outputContent.textContent = `Error: \${data.message}\\n\\n\${data.output || ''}`;
                 }
             })
             .catch(error => {
-                outputContent.textContent = `An unexpected error occurred. Please check the browser console.\\n\\n${error}`;
+                // CORRECTED: Use template literals
+                outputContent.textContent = `An unexpected error occurred. Please check the browser console.\\n\\n\${error}`;
             })
             .finally(() => {
                 this.innerHTML = originalButtonHTML;
