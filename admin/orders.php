@@ -21,12 +21,10 @@ $sql_where_conditions = [];
 $params = [];
 
 if (!empty($search_term)) {
-    // Search by Order ID, Customer Name, or Customer Email
-    // Note: ::text is a PostgreSQL cast to search numeric fields like text
     $sql_where_conditions[] = "(o.id::text ILIKE :search OR o.customer_name ILIKE :search OR o.customer_email ILIKE :search)";
     $params[':search'] = '%' . $search_term . '%';
 }
-if (!empty($status_filter) && in_array($status_filter, ['pending', 'processing', 'completed', 'cancelled'])) {
+if (!empty($status_filter)) {
     $sql_where_conditions[] = "o.status = :status";
     $params[':status'] = $status_filter;
 }
@@ -41,11 +39,12 @@ try {
     $total_pages = ceil($total_orders / $limit);
 
     // Fetch orders for the current page
-    $orders_sql = "SELECT o.id, o.order_date, o.customer_name, o.total_amount, o.status, u.id as user_id 
+    // CORRECTED: Changed o.order_date to o.created_at
+    $orders_sql = "SELECT o.id, o.created_at as order_date, o.customer_name, o.total_amount, o.status, u.id as user_id 
                    FROM orders o
                    LEFT JOIN users u ON o.user_id = u.id"
                    . $where_clause . 
-                   " ORDER BY o.order_date DESC LIMIT :limit OFFSET :offset";
+                   " ORDER BY o.created_at DESC LIMIT :limit OFFSET :offset";
                    
     $orders_stmt = $pdo->prepare($orders_sql);
     foreach ($params as $key => &$val) {
@@ -116,6 +115,7 @@ require_once 'includes/header.php';
                         <tr>
                             <td><a href="/admin/view_order.php?id=<?php echo e($order['id']); ?>" class="fw-bold text-dark text-decoration-none">#<?php echo e($order['id']); ?></a></td>
                             <td><a href="/admin/view_user.php?id=<?php echo e($order['user_id']); ?>"><?php echo e($order['customer_name']); ?></a></td>
+                            <!-- CORRECTED: Using 'order_date' alias which now points to 'created_at' -->
                             <td><?php echo date('d M, Y', strtotime($order['order_date'])); ?></td>
                             <td>$<?php echo e(number_format($order['total_amount'], 2)); ?></td>
                             <td class="text-center">

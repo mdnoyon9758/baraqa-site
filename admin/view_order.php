@@ -119,10 +119,8 @@ require_once 'includes/header.php';
                         <dl class="row text-end">
                             <dt class="col-6">Subtotal:</dt>
                             <dd class="col-6">$<?php echo e(number_format($subtotal, 2)); ?></dd>
-
                             <dt class="col-6">Shipping:</dt>
                             <dd class="col-6">$0.00</dd> <!-- Placeholder -->
-
                             <dt class="col-6 border-top pt-2">Total:</dt>
                             <dd class="col-6 border-top pt-2 fw-bold fs-5">$<?php echo e(number_format($order['total_amount'], 2)); ?></dd>
                         </dl>
@@ -147,7 +145,8 @@ require_once 'includes/header.php';
                 <hr>
                 <dl class="row mb-0">
                     <dt class="col-sm-5">Order Date:</dt>
-                    <dd class="col-sm-7"><?php echo date('d M Y, h:i A', strtotime($order['order_date'])); ?></dd>
+                    <!-- CORRECTED: Changed $order['order_date'] to $order['created_at'] -->
+                    <dd class="col-sm-7"><?php echo date('d M Y, h:i A', strtotime($order['created_at'])); ?></dd>
                     
                     <dt class="col-sm-5">Payment Method:</dt>
                     <dd class="col-sm-7"><?php echo e($order['payment_method'] ?? 'Not specified'); ?></dd>
@@ -156,7 +155,7 @@ require_once 'includes/header.php';
                     <dd class="col-sm-7"><code><?php echo e($order['transaction_id'] ?? 'N/A'); ?></code></dd>
                 </dl>
                 <hr>
-                <form action="/admin/update_order_status.php" method="POST"> <!-- This file needs to be created -->
+                <form action="/admin/update_order_status.php" method="POST">
                     <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
                     <input type="hidden" name="order_id" value="<?php echo e($order['id']); ?>">
                     <label for="order_status" class="form-label fw-bold">Update Order Status:</label>
