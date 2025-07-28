@@ -112,6 +112,94 @@ require_once __DIR__ . '/../includes/header.php';
         <?php endif; ?>
     <?php endforeach; ?>
 
+    <!-- Customer Testimonials Section -->
+    <section class="py-5">
+        <h2 class="section-title h3 mb-4">
+            <span>What Our Customers Say</span>
+        </h2>
+        <div id="testimonialsCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <div class="card testimonial-card text-center p-4">
+                                <div class="card-body">
+                                    <div class="testimonial-stars text-warning mb-3">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                    <blockquote class="blockquote mb-3">
+                                        <p class="mb-0">"Amazing deals and fast delivery! I've saved hundreds of dollars using this platform. The AI recommendations are spot on!"</p>
+                                    </blockquote>
+                                    <footer class="blockquote-footer">
+                                        <strong>Sarah Johnson</strong>
+                                    </footer>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <div class="card testimonial-card text-center p-4">
+                                <div class="card-body">
+                                    <div class="testimonial-stars text-warning mb-3">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                    <blockquote class="blockquote mb-3">
+                                        <p class="mb-0">"Best shopping experience I've had online. The trending products section helped me discover items I never knew I needed!"</p>
+                                    </blockquote>
+                                    <footer class="blockquote-footer">
+                                        <strong>Michael Chen</strong>
+                                    </footer>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <div class="card testimonial-card text-center p-4">
+                                <div class="card-body">
+                                    <div class="testimonial-stars text-warning mb-3">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                    </div>
+                                    <blockquote class="blockquote mb-3">
+                                        <p class="mb-0">"Great customer service and reliable products. The wishlist feature makes it easy to keep track of items I want to buy later."</p>
+                                    </blockquote>
+                                    <footer class="blockquote-footer">
+                                        <strong>Emily Rodriguez</strong>
+                                    </footer>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#testimonialsCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#testimonialsCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+    </section>
+
 </div>
 
 <?php 
@@ -156,6 +244,33 @@ $page_styles = "
 .product-carousel .slick-prev:before { content: '\\f284'; }
 .product-carousel .slick-next:before { content: '\\f285'; }
 .product-carousel .slick-disabled { opacity: 0.3; }
+
+/* Testimonials Section */
+.testimonial-card {
+    background-color: #fff;
+    border: 1px solid #e3e6f0;
+    border-radius: 10px;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    transition: transform 0.3s ease;
+}
+.testimonial-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.25rem 2rem 0 rgba(58, 59, 69, 0.2);
+}
+.testimonial-stars {
+    font-size: 1.2rem;
+}
+#testimonialsCarousel .carousel-control-prev,
+#testimonialsCarousel .carousel-control-next {
+    width: 5%;
+    color: #800080;
+}
+#testimonialsCarousel .carousel-control-prev-icon,
+#testimonialsCarousel .carousel-control-next-icon {
+    background-color: #800080;
+    border-radius: 50%;
+    padding: 20px;
+}
 ";
 
 require_once __DIR__ . '/../includes/footer.php'; 

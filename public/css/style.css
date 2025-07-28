@@ -13,14 +13,20 @@ BARAQA - Main Stylesheet (Final Version with all fixes)
     --text-light: #fff;
     --border-color: #ddd;
     --light-bg: #f8f9fa;
-    --body-bg: #EAEDED;
+    --body-bg: #f4f4f4;
     --danger-red: #B12704;
+    --active-link-color: #800080;
 }
 
 body {
     background-color: var(--body-bg);
     font-family: 'Inter', sans-serif;
     color: var(--text-dark);
+}
+
+/* Montserrat font for all headings */
+h1, h2, h3 {
+    font-family: 'Montserrat', sans-serif;
 }
 
 a {
@@ -84,6 +90,13 @@ a:hover {
 .sub-nav-bar { background-color: #37475A; font-size: 0.9rem; border-top: 1px solid #4a5b70; }
 .sub-nav-link { color: #fff; padding: 6px 12px; border-radius: 3px; }
 .sub-nav-link:hover { outline: 1px solid #fff; color: #fff; }
+.sub-nav-link.active, .nav-link.active { color: var(--active-link-color) !important; }
+
+/* Navigation active states */
+.navbar-nav .nav-link.active,
+.navbar-nav .show > .nav-link {
+    color: var(--active-link-color) !important;
+}
 
 
 /* --- 3. Homepage Styles --- */
@@ -165,6 +178,25 @@ a:hover {
 }
 .thumbnail-item:hover { opacity: 1; }
 .thumbnail-item.active { opacity: 1; border-color: var(--amazon-orange); }
+
+/* Vertical Thumbnail Gallery Styles */
+.vertical-thumbnail-gallery {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.vertical-thumbnail-item .thumbnail-item {
+    width: 100%;
+    height: 80px;
+    max-width: 100px;
+}
+.vertical-thumbnail-gallery .thumbnail-item {
+    border-radius: 8px;
+}
+.vertical-thumbnail-gallery .thumbnail-item.active {
+    border-color: var(--active-link-color);
+    box-shadow: 0 0 8px rgba(128, 0, 128, 0.3);
+}
 
 .product-title-amazon { font-size: 1.75rem; font-weight: 500; }
 .product-price-amazon { font-size: 1.75rem; color: var(--danger-red); }
